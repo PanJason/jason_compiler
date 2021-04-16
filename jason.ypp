@@ -4,7 +4,7 @@
 /*Yueyang (Jason) Pan                               */
 /****************************************************/
 %{
-    #include "globals.h"
+    #include "global.h"
     #include <algorithm>
     #include <stdlib.h>
     #define YYSTYPE ASTPtr
@@ -172,23 +172,21 @@ InitValList : InitVal {
 }
             ;
 
-FuncDef     : FuncType IDENT SLPAREN SRPAREN Block {
-    auto p_TokenTypeAST = std::dynamic_pointer_cast<TokenTypeAST>($1);
+FuncDef     : VOID IDENT SLPAREN SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(p_TokenTypeAST.func_type(), p_IdAST.id(), nullptr, std::move($5));
+    $$ = std::make_shared<FuncDefAST>(VOID, p_IdAST.id(), nullptr, std::move($5));
 }
-            | FuncType IDENT SLPAREN FuncFParams SRPAREN Block {
-    auto p_TokenTypeAST = std::dynamic_pointer_cast<TokenTypeAST>($1);
+            | VOID IDENT SLPAREN FuncFParams SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(p_TokenTypeAST.func_type(), p_IdAST.id(), std::move($4), std::move($6));
+    $$ = std::make_shared<FuncDefAST>(VOID, p_IdAST.id(), std::move($4), std::move($6));
 }
-            ;
-
-FuncType    : VOID {
-    $$ = std::make_shared<TokenTypeAST>(VOID);
+            | INT IDENT SLPAREN SRPAREN Block {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
+    $$ = std::make_shared<FuncDefAST>(INT, p_IdAST.id(), nullptr, std::move($5));
 }
-            | INT {
-    $$ = std::make_shared<TokenTypeAST>(INT);
+            | INT IDENT SLPAREN FuncFParams SRPAREN Block {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
+    $$ = std::make_shared<FuncDefAST>(INT, p_IdAST.id(), std::move($4), std::move($6));
 }
             ;
 
@@ -270,9 +268,10 @@ Assign_stmt : LVal EQ Exp SEMI {
 Exp_stmt    : SEMI {
     $$ = std::make_shared<ExpAST>(nullptr);
 }
-            ; Exp SEMI {
+            | Exp SEMI {
     $$ = std::make_shared<ExpAST>(std::move($1));
 }
+            ;
 
 If_stmt     : IF SLPAREN Cond SRPAREN Stmt {
     $$ = std::make_shared<IfAST>(std::move($3), std::move($5), nullptr);
