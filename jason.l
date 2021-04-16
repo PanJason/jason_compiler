@@ -5,14 +5,14 @@
 /****************************************************/
 
 %{
-    #include "global.hpp"
+    #include "global.h"
 %}
 dec_digit       [0-9]
 oct_digit       [0-7]
 hex_digit       [0-9a-fA-F]
 nonzero_digit   [1-9]
 oct_num         0{oct_digit}*
-hex_num         0x{hex_digit}+
+hex_num         0x{hex_digit}+ | 0X{hex_digit}+
 dec_num         {nonzero_digit}{dec_digit}*
 identifier_nondigit [a-zA-Z_]
 identifier_all  [a-zA-Z0-9_]

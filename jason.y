@@ -6,7 +6,9 @@
 %{
     #include "globals.h"
     #include <algorithm>
+    #include <stdlib.h>
     #define YYSTYPE ASTPtr
+    #define DEBUG
     static ASTPtr root;
 %}
 
@@ -16,7 +18,7 @@
 %token ID DEC_NUM OCT_NUM HEX_NUM
 %token ASSIGN SEMI COMMA LLPAREN LRPAREN MLPAREN MRPAREN SLPAREN SRPAREN
 %token NOT EQ NEQ LT GT LTE GTE PLUS MINUS TIMES OVER MOD AND OR
-%token SIN_COMMENT MUL_LCOMMENT MUL_RCOMMENT
+//%token SIN_COMMENT MUL_LCOMMENT MUL_RCOMMENT
 %token ERROR
 
 %% /* Grammar for SysY */
@@ -62,177 +64,387 @@ ConstDefList : ConstDef {
 }
             ;
 
-ConstDef    : ID EQ ConstInitVal {
-    auto p_IDAST = std::dynamic_pointer_cast<IDAST>($1);
-    $$ = std::make_shared<ConstDefAST>(p_IDAST.id(),nullptr, std::move($3));
+ConstDef    : IDENT EQ ConstInitVal {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
+    $$ = std::make_shared<ConstDefAST>(p_IdAST.id(),nullptr, std::move($3));
 }
-            | ID Dimension EQ ConstInitVal {
-    auto p_IDAST = std::dynamic_pointer_cast<IDAST>($1);
-    $$ = std::make_shared<ConstDefAST>(p_IDAST.id(),std::move($2), std::move($4));
+            | IDENT Dimension EQ ConstInitVal {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
+    $$ = std::make_shared<ConstDefAST>(p_IdAST.id(),std::move($2), std::move($4));
 }
             ;
 
-Dimension   : MLPAREN ConstExp MRPAREN {
+Dimension   : MLPAREN Exp MRPAREN {
     ASTPtrList const_exprs;
     const_exprs.push_back(std::move($2));
-    $$ = std::make_shared<ConstDefListAST>(std::move(const_exprs));
+    $$ = std::make_shared<DimensionAST>(std::move(const_exprs));
 }
-            | Dimension MLPAREN ConstExp MRPAREN  {
+            | Dimension MLPAREN Exp MRPAREN  {
     auto p_DimensionAST = std::dynamic_pointer_cast<DimensionAST>($1);
     p_DimensionAST.dims().push_back(std::move($3));
     $$ = p_DimensionAST;            
 }
             ;
 
-ConstInitVal: ConstExp {}
-            | EMPTY {}
-            | LLPAREN ConstInitVal LRPAREN {}
-            | LLPAREN ConstInitVal MulConstInitVal LRPAREN {}
+ConstInitVal: Exp { $$ = $1; }
+            | ConstInitValArray { $$ = $1; }
             ;
 
-EMPTY       : LLPAREN LRPAREN {}
+ConstInitValArray : EMPTY {
+    $$ = std::make_shared<ConstInitValArrayAST>(nullptr);
+}
+            | LLPAREN ConstInitValList LRPAREN {
+    $$ = std::make_shared<ConstInitValArrayAST>(std::move($2));
+}
             ;
 
-MulConstInitVal : COMMA ConstInitVal {}
-                | COMMA ConstInitVal MulConstInitVal {}
-                ;
-VarDecl     : INT VarDef SEMI {}
-            | INT VarDef MulVarDef SEMI {}
+EMPTY       : LLPAREN LRPAREN
             ;
 
-MulVarDef   : COMMA VarDef {}
-            | COMMA VarDef MulVarDef {}
+ConstInitValList : ConstInitVal {
+    ASTPtrList const_exprs;
+    const_exprs.push_back(std::move($1));
+    $$ = std::make_shared<ConstInitValAST>(std::move(const_exprs));
+}
+            | ConstInitValList COMMA ConstInitVal {
+    auto p_ConstInitValList = std::dynamic_pointer_cast<ConstInitValAST>($1);
+    p_ConstInitValList.const_exprs().push_back(std::move($3));
+    $$ = p_ConstInitValList;
+}
             ;
 
-VarDef      : ID {}
-            | ID EQ InitVal {}
-            | ID Dimension {}
-            | ID Dimension EQ InitVal {}
+VarDecl     : INT VarDefList SEMI {
+    $$ =  std::make_shared<VarDeclAST>(INT, std::move($2));
+}
             ;
 
-InitVal     : Exp {}
-            | EMPTY {}
-            | LLPAREN InitVal LRPAREN {}
-            | LLPAREN InitVal MulInitVal LRPAREN {}
+VarDefList  : VarDef {
+    ASTPtrList var_defs;
+    var_defs.push_back(std::move($1));
+    $$ = std::make_shared<VarDefListAST>(std::move(var_defs));
+}
+            | VarDefList COMMA VarDef {
+    auto p_VarDefList = std::dynamic_pointer_cast<VarDefListAST>($1);
+    p_VarDefList.var_defs().push_back(std::move($3));
+    $$ = p_VarDefList;
+}
             ;
 
-MulInitVal  : COMMA InitVal {}
-            | COMMA InitVal MulInitVal {}
+VarDef      : IDENT {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
+    $$ = std::make_shared<VarDefAST>(p_IdAST.id(), nullptr, nullptr);
+}
+            | IDENT EQ InitVal {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
+    $$ = std::make_shared<VarDefAST>(p_IdAST.id(), nullptr, std::move($3));
+}
+            | IDENT Dimension {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
+    $$ = std::make_shared<VarDefAST>(p_IdAST.id(), std::move($2), nullptr);
+}
+            | IDENT Dimension EQ InitVal {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
+    $$ = std::make_shared<VarDefAST>(p_IdAST.id(), std::move($2), std::move($4));
+}
             ;
 
-FuncDef     : FuncType ID SLPAREN SRPAREN Block {}
-            | FuncType ID SLPAREN FuncFParams SRPAREN Block {}
+InitVal     : Exp { $$ = $1; }
+            | InitValArray { $$ = $1; }
             ;
 
-FuncType    : VOID {}
-            | INT {}
+InitValArray : EMPTY {
+    $$ = std::make_shared<InitValArrayAST>(nullptr);
+}
+            | LLPAREN InitValList LRPAREN {
+    $$ = std::make_shared<InitValArrayAST>(std::move($2));
+}
             ;
 
-FuncFParams : FuncFParam {}
-            | FuncFParam MulFuncFParam {}
+InitValList : InitVal {
+    ASTPtrList exprs;
+    exprs.push_back(std::move($1));
+    $$ = std::make_shared<InitValAST>(std::move(exprs));
+}
+            | InitValList COMMA InitVal {
+    auto p_InitValList = std::dynamic_pointer_cast<InitValAST>($1);
+    p_InitValList.exprs().push_back(std::move($3));
+    $$ = p_InitValList;
+}
             ;
 
-MulFuncFParam : COMMA FuncFParams {}
-            | COMMA FuncFParams MulFuncFParam {}
+FuncDef     : FuncType IDENT SLPAREN SRPAREN Block {
+    auto p_TokenTypeAST = std::dynamic_pointer_cast<TokenTypeAST>($1);
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
+    $$ = std::make_shared<FuncDefAST>(p_TokenTypeAST.func_type(), p_IdAST.id(), nullptr, std::move($5));
+}
+            | FuncType IDENT SLPAREN FuncFParams SRPAREN Block {
+    auto p_TokenTypeAST = std::dynamic_pointer_cast<TokenTypeAST>($1);
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
+    $$ = std::make_shared<FuncDefAST>(p_TokenTypeAST.func_type(), p_IdAST.id(), std::move($4), std::move($6));
+}
             ;
 
-FuncFParam  : INT ID {}
-            | INT ID MLPAREN MRPAREN {}
-            | INT ID MLPAREN MRPAREN Dimension {}
+FuncType    : VOID {
+    $$ = std::make_shared<TokenTypeAST>(VOID);
+}
+            | INT {
+    $$ = std::make_shared<TokenTypeAST>(INT);
+}
             ;
 
-Block       : EMPTY {};
-            | LLPAREN BlockItem LRPAREN {}
+FuncFParams : FuncFParam {
+    ASTPtrList param_list;
+    param_list.push_back(std::move($1));
+    $$ = std::make_shared<FuncFParamsAST>(std::move(param_list));
+}
+            | FuncFParams COMMA FuncFParam {
+    auto p_FuncFParams = std::dynamic_pointer_cast<FuncFParamsAST>($1);
+    p_FuncFParams.param_list().push_back(std::move($3));
+    $$ = p_FuncFParams;
+}
             ;
 
-BlockItem   : Decl {}
-            | Stmt {}
+
+FuncFParam  : FuncFParamVar { $$ = $1; }
+            | FuncFParamArray { $$ = $1; }
             ;
 
-Stmt        : Block {}
-            | LVal EQ Exp SEMI {}
-            | SEMI {}
-            | Exp SEMI {}
-            | IF SLPAREN Cond SRPAREN Stmt {}
-            | IF SLPAREN Cond SRPAREN Stmt ELSE Stmt {}
-            | WHILE SLPAREN Cond SRPAREN Stmt {}
-            | BREAK SEMI {}
-            | CONTINUE SEMI {}
-            | RETURN SEMI {}
-            | RETURN Exp SEMI {}
+FuncFParamVar : INT IDENT {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
+    $$ = std::make_shared<FuncFParamVarAST>(INT, p_IdAST.id());
+}
             ;
 
-Exp         : AddExp {}
+FuncFParamArray : INT IDENT MLPAREN MRPAREN {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
+    $$ = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST.id(), nullptr);
+}
+            | INT IDENT MLPAREN MRPAREN Dimension {
+    auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
+    $$ = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST.id(), std::move($5));
+}
             ;
 
-ConstExp    : AddExp {}
+Block       : EMPTY {
+    $$ = std::make_shared<BlockAST>(nullptr);
+};
+            | LLPAREN BlockItems LRPAREN {
+    $$ = std::make_shared<BlockAST>(std::move($2));
+}
             ;
 
-Cond        : LOrExp {}
+BlockItems  : BlockItem {
+    ASTPtrList items;
+    items.push_back(std::move($1));
+    $$ = std::make_shared<BlockItemsAST>(std::move(items));
+}
+            | BlockItems BlockItem {
+    auto p_BlockItems = std::dynamic_pointer_cast<BlockItemsAST>($1);
+    p_BlockItems.items().push_back(std::move($2));
+    $$ = p_BlockItems;
+}
             ;
 
-LVal        : ID {}
-            | ID DimExp {}
+BlockItem   : Decl {
+    $$ = $1;
+}
+            | Stmt {
+    $$ = $1;
+}
             ;
 
-DimExp      : MLPAREN Exp MRPAREN {}
-            | MLPAREN Exp MRPAREN DimExp {}
+Stmt        : Block { $$ = $1; }
+            | Assign_stmt { $$ = $1; }
+            | Exp_stmt { $$ = $1; }
+            | If_stmt { $$ = $1; }
+            | While_stmt { $$ = $1; }
+            | Cond_stmt { $$ = $1; }
+            | Return_stmt { $$ = $1; }
             ;
 
-PrimaryExp  : SLPAREN Exp SRPAREN {}
-            | LVal {}
-            | DEC_NUM {}
-            | OCT_NUM {}
-            | HEX_NUM {}
+Assign_stmt : LVal EQ Exp SEMI {
+    $$ = std::make_shared<AssignAST>(std::move($1), std::move($3));
+}
             ;
 
-UnaryExp    : PrimaryExp {}
-            | ID SLPAREN SRPAREN {}
-            | ID SLPAREN FuncRParams SRPAREN
-            | UnaryOp UnaryExp {}
+Exp_stmt    : SEMI {
+    $$ = std::make_shared<ExpAST>(nullptr);
+}
+            ; Exp SEMI {
+    $$ = std::make_shared<ExpAST>(std::move($1));
+}
+
+If_stmt     : IF SLPAREN Cond SRPAREN Stmt {
+    $$ = std::make_shared<IfAST>(std::move($3), std::move($5), nullptr);
+}
+            | IF SLPAREN Cond SRPAREN Stmt ELSE Stmt {
+    $$ = std::make_shared<IfAST>(std::move($3), std::move($5), std::move($7));
+}
             ;
 
-UnaryOp     : PLUS {}
-            | MINUS {}
-            | NOT {}
+While_stmt  : WHILE SLPAREN Cond SRPAREN Stmt {
+    $$ = std::make_shared<WhileAST>(std::move($3), std::move($5));
+}
             ;
 
-FuncRParams : Exp {}
-            | Exp MultiExp {}
+Cond_stmt   : BREAK SEMI {
+    $$ = std::make_shared<CondAST>(BREAK);
+}
+            | CONTINUE SEMI {
+    $$ = std::make_shared<CondAST>(CONTINUE);
+}
             ;
 
-MultiExp    : COMMA Exp {}
-            | COMMA Exp MultiExp {}
+Return_stmt : RETURN SEMI {
+    $$ = std::make_shared<ReturnAST>(nullptr);
+}
+            | RETURN Exp SEMI {
+    $$ = std::make_shared<ReturnAST>(std::move($1));
+}
             ;
 
-MulExp      : UnaryExp {}
-            | MulExp TIMES UnaryExp {}
-            | MulExp OVER UnaryExp {}
-            | MulExp MOD UnaryExp {}
+Exp         : AddExp { $$ = $1; }
             ;
 
-AddExp      : MulExp {}
-            | AddExp PLUS MulExp {}
-            | AddExp MINUS MulExp {}
+Cond        : LOrExp { $$ = $1; }
             ;
 
-RelExp      : AddExp {}
-            | RelExp LT AddExp {}
-            | RelExp GT AddExp {}
-            | RelExp LTE AddExp {}
-            | RelExp GTE AddExp {}
+LVal        : IDENT { $$ = $1 }
+            | IDENT Dimension {
+                auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1); 
+                $$ = std::make_shared<ArrayAST>(p_IdAST.id(), std::move($2));
+            }
             ;
 
-EqExp       : RelExp {}
-            | EqExp EQ RelExp {}
-            | EqExp NEQ RelExp {}
+PrimaryExp  : SLPAREN Exp SRPAREN { $$ = $2; }
+            | LVal { $$ = $1}
+            | DEC_NUM {
+                $$ = std::make_shared<IntAST>(atoi(yytext));
+                #ifdef DEBUG
+                    printf("%d\n", atoi(yytext));
+                #endif 
+            }
+            | OCT_NUM {
+                $$ = std::make_shared<IntAST>(strtol(yytext, NULL, 8));
+                #ifdef DEBUG
+                    printf("%d\n", strtol(yytext, NULL, 8));
+                #endif
+            }
+            | HEX_NUM {
+                $$ = std::make_shared<IntAST>(strtol(yytext, NULL, 16));
+                #ifdef DEBUG
+                    printf("%d\n", strtol(yytext, NULL, 16));
+                #endif
+            }
             ;
 
-LAndExp     : EqExp {}
-            | LAndExp AND EqExp {}
+UnaryExp    : PrimaryExp { $$ = $1; }
+            | FuncCallExp { $$ = $1; }
+            | PLUS UnaryExp {
+                $$ = std::make_shared<UnaryAST>(PLUS, std::move($2));
+            }
+            | MINUS UnaryExp {
+                $$ = std::make_shared<UnaryAST>(MINUS, std::move($2));
+            }
+            | NOT UnaryExp {
+                $$ = std::make_shared<UnaryAST>(NOT, std::move($2));
+            }
+            ;
 
-LOrExp      : LAndExp {}
-            | LOrExp OR LAndExp {}
+FuncCallExp : IDENT SLPAREN SRPAREN {
+                auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
+                $$ = std::make_shared<FuncCallAST>(p_IdAST.id(), nullptr); 
+            }
+            | IDENT SLPAREN FuncRParams SRPAREN {
+                auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
+                $$ = std::make_shared<FuncCallAST>(p_IdAST.id(), std::move($3)); 
+            }
+            ;
 
+FuncRParams : Exp {
+    ASTPtrList exprs;
+    exprs.push_back(std::move($1));
+    $$ = std::make_shared<FuncRParamsAST>(std::move(exprs));
+}
+            | FuncRParams COMMA Exp {
+    auto p_FuncRParams = std::dynamic_pointer_cast<FuncRParamsAST>($1);
+    p_FuncRParams.exprs().push_back(std::move($3));
+    $$ = p_FuncRParams;
+}
+            ;
+
+
+MulExp      : UnaryExp { $$ = $1; }
+            | MulExp TIMES UnaryExp {
+                $$ = std::make_shared<BinaryAST>(TIMES,
+                std::move($1), std::move($3));
+            }
+            | MulExp OVER UnaryExp {
+                $$ = std::make_shared<BinaryAST>(OVER,
+                std::move($1), std::move($3));
+            }
+            | MulExp MOD UnaryExp {
+                $$ = std::make_shared<BinaryAST>(MOD,
+                std::move($1), std::move($3));
+            }
+            ;
+
+AddExp      : MulExp { $$ = $1 }
+            | AddExp PLUS MulExp {
+                $$ = std::make_shared<BinaryAST>(PLUS,
+                std::move($1), std::move($3));
+            }
+            | AddExp MINUS MulExp {
+                $$ = std::make_shared<BinaryAST>(MINUS,
+                std::move($1), std::move($3));
+            }
+            ;
+
+RelExp      : AddExp { $$ = $1; }
+            | RelExp LT AddExp {
+                $$ = std::make_shared<BinaryAST>(LT,
+                std::move($1), std::move($3));
+            }
+            | RelExp GT AddExp {
+                $$ = std::make_shared<BinaryAST>(GT,
+                std::move($1), std::move($3));
+            }
+            | RelExp LTE AddExp {
+                $$ = std::make_shared<BinaryAST>(LTE,
+                std::move($1), std::move($3));
+            }
+            | RelExp GTE AddExp {
+                $$ = std::make_shared<BinaryAST>(GTE,
+                std::move($1), std::move($3));
+            }
+            ;
+
+EqExp       : RelExp { $$ = $1; }
+            | EqExp EQ RelExp {
+                $$ = std::make_shared<BinaryAST>(EQ,
+                std::move($1), std::move($3));
+            }
+            | EqExp NEQ RelExp {
+                $$ = std::make_shared<BinaryAST>(NEQ,
+                std::move($1), std::move($3));
+            }
+            ;
+
+LAndExp     : EqExp { $$ = $1; }
+            | LAndExp AND EqExp {
+                $$ = std::make_shared<BinaryAST>(AND,
+                std::move($1), std::move($3));
+            }
+
+LOrExp      : LAndExp { $$ = $1; }
+            | LOrExp OR LAndExp {
+                $$ = std::make_shared<BinaryAST>(OR,
+                std::move($1), std::move($3));
+            }
+
+IDENT       : ID{
+    $$ = std::make_unique<IdAST>(yytext);
+}
+            ;
 
 %%
