@@ -1,0 +1,301 @@
+/****************************************************/
+/*File: jason.y                                     */
+/*Define Global Variables and data types            */
+/*Yueyang (Jason) Pan                               */
+/****************************************************/
+#ifndef __GLOBALS_H_
+#define __GLOBALS_H_
+#include <optional>
+#include <vector>
+#include <string>
+#include <memory>
+#include <utility>
+
+#include <iostream>
+
+extern int lineno;
+class BaseAst {
+public:
+    virtual ~BaseAst() = default;
+    virtual std::optional<int> Eval() const = 0;
+};
+using ASTPtr = std::shared_ptr<BaseAst>;
+using ASTPtrList = std::vector<ASTPtr>;
+using IdList = std::vector<std::string>;
+using TokenType = int;
+
+class CompUnitAST : public BaseAst {
+public:
+    CompUnitAST(ASTPtrList units)
+    : _units(std::move(units)) {}
+    std::optional<int> Eval() const override;
+    const ASTPtrList &units() const {return _units; }
+    ASTPtrList _units;
+};
+
+class ConstDeclAST : public BaseAst{
+public:
+    ConstDeclAST(const TokenType decl_type, ASTPtr const_defs)
+    : _decl_type(decl_type), _const_defs(std::move(const_defs)) {}
+    std::optional<int> Eval() const override;
+    const TokenType decl_type() const {return _decl_type; }
+    const ASTPtr &const_defs() const {return _const_defs; }
+private:
+    TokenType _decl_type;
+    ASTPtr _const_defs;
+};
+
+class ConstDefListAST : public BaseAst{
+public:
+    ConstDefListAST(ASTPtrList const_defs)
+    : _const_defs(std::move(const_defs)) {}
+    std::optional<int> Eval() const override;
+    ASTPtrList &const_defs() {return _const_defs;}
+private:
+    ASTPtrList _const_defs;
+};
+
+class ConstDefAST : public BaseAst{
+public:
+    ConstDefAST(const std::string &id, ASTPtrList const_exprs, ASTPtr const_init_val)
+    : _id(id), _const_exprs(std::move(const_exprs)), _const_init_val(std::move(const_init_val)) {}
+    std::optional<int> Eval() const override;
+    const std::string &id() const {return _id;}
+    const ASTPtrList &const_exprs() const {return _const_exprs;}
+    const ASTPtr &const_init_val() const {return _const_init_val; }
+private:
+    std::string _id;
+    ASTPtrList _const_exprs;
+    ASTPtr _const_init_val;
+};
+
+class ConstInitValAST : public BaseAst{
+public:
+    ConstInitValAST(ASTPtrList const_exprs)
+    : _const_exprs(std::move(const_exprs)) {}
+    std::optional<int> Eval() const override;
+    const ASTPtrList &const_exprs() const {return _const_exprs; }
+private:
+    ASTPtrList _const_exprs;
+};
+
+class VarDeclAST : public BaseAst{
+public:
+    VarDeclAST(const TokenType decl_type, ASTPtrList var_defs)
+    : _decl_type(decl_type), _var_defs(std::move(var_defs)) {}
+    std::optional<int> Eval() const override;
+    const TokenType decl_type() const {return _decl_type; }
+    const ASTPtrList &var_defs() const {return _var_defs; }
+private:
+    TokenType _decl_type;
+    ASTPtrList _var_defs;
+};
+
+class VarDefAST : public BaseAst{
+public:
+    VarDefAST(const std::string &id, ASTPtr const_exprs, ASTPtr init_val)
+    : _id(id), _const_exprs(std::move(const_exprs)), _init_val(std::move(init_val)) {}
+    std::optional<int> Eval() const override;
+    const std::string &id() const {return _id;}
+    const ASTPtr &const_exprs() const {return _const_exprs;}
+    const ASTPtr &init_val() const {return _init_val; }
+private:
+    std::string _id;
+    ASTPtr _const_exprs;
+    ASTPtr _init_val;
+};
+
+class InitValAST : public BaseAst{
+public:
+    InitValAST(ASTPtrList exprs)
+    : _exprs(std::move(exprs)) {}
+    std::optional<int> Eval() const override;
+    const ASTPtrList &exprs() const {return _exprs; }
+private:
+    ASTPtrList _exprs;
+};
+
+
+
+class FuncDefAST : public BaseAst{
+public:
+    FuncDefAST(const TokenType func_type, const std::string &name, ASTPtr params, ASTPtr block) 
+    : _func_type(func_type), _name(name), _params(std::move(params)), _block(std::move(block)) {}
+    std::optional<int> Eval() const override;
+    const TokenType func_type() const {return _func_type;}
+    const std::string &name() const {return _name;}
+    const ASTPtr &params() const {return _params;}
+    const ASTPtr &block() const {return _block;}
+private:
+    TokenType _func_type;
+    std::string _name;
+    ASTPtr _params;
+    ASTPtr _block;
+};
+
+class FuncFParams : public BaseAst{
+public:
+    FuncFParams(ASTPtrList param_list)
+    : _param_list(std::move(param_list)) {}
+    std::optional<int> Eval() const override;
+    const ASTPtrList &param_list() const {return _param_list;}
+private:
+    ASTPtrList _param_list;
+};
+
+class FuncFParam : public BaseAst{
+public:
+    FuncFParam(const TokenType param_type, const std::string &name, ASTPtr dimension)
+    : _param_type(param_type), _name(name), _dimension(std::move(dimension)){}
+    std::optional<int> Eval() const override;
+    const TokenType param_type() const {return _param_type;}
+    const std::string &name() const {return _name; }
+    const ASTPtr &dimension() const {return _dimension;}
+private:
+    TokenType _param_type;
+    std::string _name;
+    ASTPtr _dimension;
+};
+
+class DimensionAST : public BaseAst {
+public:
+    DimensionAST(ASTPtrList dims)
+    : _dims(std::move(dims)) {}
+    std::optional<int> Eval() const override;
+    ASTPtrList &dims() {return _dims; }
+private:
+    ASTPtrList _dims;
+};
+
+class BlockAST : public BaseAst {
+public:
+    BlockAST(ASTPtrList blockitems)
+    : _blockitems(std::move(blockitems)) {}
+    std::optional<int> Eval() const override;
+    const ASTPtrList &blockitem() const {return _blockitems; }
+private:
+    ASTPtrList _blockitems;
+};
+
+class AssignAST : public BaseAst {
+public:
+    AssignAST(ASTPtr lval, ASTPtr expr)
+    : _lval(std::move(lval)), _expr(std::move(expr)) {}
+    std::optional<int> Eval() const override;
+    const ASTPtr &lval() const {return _lval; }
+    const ASTPtr &expr() const {return _expr; }
+private:
+    ASTPtr _lval;
+    ASTPtr _expr;
+};
+
+class IfAST : public BaseAst {
+public:
+    IfAST(ASTPtr cond, ASTPtr then, ASTPtr else_then)
+    : _cond(std::move(cond)), _then(std::move(then)), _else_then(std::move(else_then)) {}
+    std::optional<int> Eval() const override;
+    const ASTPtr &cond() const {return _cond; }
+    const ASTPtr &then() const {return _then; }
+    const ASTPtr &else_then() const {return _else_then; }
+private:
+    ASTPtr _cond, _then, _else_then;
+};
+
+class WhileAST : public BaseAst {
+public:
+    WhileAST(ASTPtr cond, ASTPtr stmt)
+    : _cond(std::move(cond)), _stmt(std::move(cond)) {}
+    std::optional<int> Eval() const override;
+    const ASTPtr &cond() const {return _cond; }
+    const ASTPtr &stmt() const {return _stmt; }
+private:
+    ASTPtr _cond, _stmt;
+};
+
+class CondAST : public BaseAst {
+public:
+    CondAST(const TokenType cond_type) : _cond_type(cond_type) {}
+    std::optional<int> Eval() const override;
+    const TokenType cond_type() const {return _cond_type; }
+private:
+    TokenType _cond_type;
+};
+
+class ReturnAST : public BaseAst {
+public:
+    ReturnAST(ASTPtr expr) : _expr(std::move(expr)) {}
+    std::optional<int> Eval() const override;
+    const ASTPtr &expr() const {return _expr; }
+private:
+    ASTPtr _expr;
+};
+
+class BinaryAST :  public BaseAst {
+public:
+    BinaryAST(TokenType op, ASTPtr lhs, ASTPtr rhs)
+    : _op(op), _lhs(std::move(lhs)), _rhs(std::move(rhs)){}
+    std::optional<int> Eval() const override;
+    const TokenType op() const {return _op; }
+    const ASTPtr &lhs() const {return _lhs; }
+    const ASTPtr &rhs() const {return _rhs; }
+private:
+    TokenType _op;
+    ASTPtr _lhs, _rhs;
+};
+
+class UnaryAST: public BaseAst {
+public:
+    UnaryAST(TokenType op, ASTPtr opr)
+    : _op(op), _opr(std::move(opr)) {}
+    std::optional<int> Eval() const override;
+    const TokenType op() const {return _op; }
+    const ASTPtr &opr() const {return _opr;}
+private:
+    TokenType _op;
+    ASTPtr _opr;
+};
+
+class FuncCallAST : public BaseAst {
+public:
+    FuncCallAST(const std::string &name, ASTPtrList params)
+    : _name(name), _params(std::move(params)) {}
+    std::optional<int> Eval() const override;
+    const std::string &name() const {return _name; }
+    const ASTPtrList &params() const {return _params; }
+private:
+    std::string _name;
+    ASTPtrList _params;
+};
+
+class IntAST : public BaseAst {
+public:
+    IntAST(int val)
+    : _val(val) {}
+    std::optional<int> Eval() const override;
+    const int val() const {return _val; }
+private:
+    int _val;
+};
+
+class IDAst : public BaseAst {
+public:
+    IDAst(const std::string &id) : _id(id) {}
+    std::optional<int> Eval() const override;
+    const std::string &id() const {return _id; }
+private:
+    std::string _id;
+};
+
+class ArrayAST : public BaseAst {
+public:
+    ArrayAST(const std::string &id, ASTPtrList exprs)
+    : _id(id), _exprs(std::move(exprs)) {}
+    std::optional<int> Eval() const override;
+    const std::string &id() const {return _id;}
+    const ASTPtrList &exprs() const {return _exprs;}
+private:
+    std::string _id;
+    ASTPtrList _exprs;
+};
+
+#endif

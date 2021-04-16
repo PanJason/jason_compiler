@@ -4,9 +4,12 @@
 /*Yueyang (Jason) Pan                               */
 /****************************************************/
 %{
-    #include "globals.hpp"
-
+    #include "globals.h"
+    #include <algorithm>
+    #define YYSTYPE ASTPtr
+    static ASTPtr root;
 %}
+
 
 %token IF THEN ELSE WHILE BREAK CONTINUE RETURN
 %token CONST INT VOID
@@ -17,33 +20,68 @@
 %token ERROR
 
 %% /* Grammar for SysY */
-program     : CompUnit
-                {}
+program     : CompUnit {root = std::move($1); }
             ;
-CompUnit    : Decl {}
-            | FuncDef {}
-            | CompUnit Decl {}
-            | CompUnit FuncDef {}
-            ;
-
-Decl        : ConstDecl {}
-            | VarDecl {}
-            ;
-
-ConstDecl   : CONST INT ConstDef SEMI {}
-            | CONST INT ConstDef MulConstDef SEMI {}
-            ;
-
-MulConstDef : COMMA ConstDef {}
-            | COMMA ConstDef MulConstDef {}
-            ;
-
-ConstDef    : ID EQ ConstInitVal {}
-            | ID Dimension EQ ConstInitVal {}
+CompUnit    : Decl { 
+    ASTPtrList units;
+    units.push_back(std::move($1));
+    $$ = std::make_shared<CompUnitAST>(std::move(units));  }
+            | FuncDef {
+    ASTPtrList units;
+    units.push_back(std::move($1));
+    $$ = std::make_shared<CompUnitAST>(std::move(units));  }
+            | CompUnit Decl {
+    auto p_CompUnitAST = std::dynamic_pointer_cast<CompUnitAST>($1);
+    p_CompUnitAST->_units.push_back(std::move($2));
+    $$ = p_CompUnitAST;
+            }
+            | CompUnit FuncDef {
+    auto p_CompUnitAST = std::dynamic_pointer_cast<CompUnitAST>($1);
+    p_CompUnitAST->_units.push_back(std::move($2));
+    $$ = p_CompUnitAST;
+            }
             ;
 
-Dimension   : MLPAREN ConstExp MRPAREN {}
-            | MLPAREN ConstExp MRPAREN Dimension {}
+Decl        : ConstDecl {$$ = $1;}
+            | VarDecl {$$ = $1;}
+            ;
+
+ConstDecl   : CONST INT ConstDefList SEMI { 
+    $$ =  std::make_shared<ConstDeclAST>(INT, std::move($3));}
+            ;
+
+ConstDefList : ConstDef {
+    ASTPtrList const_defs;
+    const_defs.push_back(std::move($1));
+    $$ = std::make_shared<ConstDefListAST>(std::move(const_defs));
+}
+            | ConstDefList COMMA ConstDef {
+    auto p_ConstDefListAST = std::dynamic_pointer_cast<ConstDefListAST>($1);
+    p_ConstDefListAST.const_defs().push_back(std::move($3));
+    $$ = p_ConstDefListAST;
+}
+            ;
+
+ConstDef    : ID EQ ConstInitVal {
+    auto p_IDAST = std::dynamic_pointer_cast<IDAST>($1);
+    $$ = std::make_shared<ConstDefAST>(p_IDAST.id(),nullptr, std::move($3));
+}
+            | ID Dimension EQ ConstInitVal {
+    auto p_IDAST = std::dynamic_pointer_cast<IDAST>($1);
+    $$ = std::make_shared<ConstDefAST>(p_IDAST.id(),std::move($2), std::move($4));
+}
+            ;
+
+Dimension   : MLPAREN ConstExp MRPAREN {
+    ASTPtrList const_exprs;
+    const_exprs.push_back(std::move($2));
+    $$ = std::make_shared<ConstDefListAST>(std::move(const_exprs));
+}
+            | Dimension MLPAREN ConstExp MRPAREN  {
+    auto p_DimensionAST = std::dynamic_pointer_cast<DimensionAST>($1);
+    p_DimensionAST.dims().push_back(std::move($3));
+    $$ = p_DimensionAST;            
+}
             ;
 
 ConstInitVal: ConstExp {}
