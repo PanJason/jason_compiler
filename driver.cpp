@@ -1,12 +1,16 @@
+/****************************************************/
+/*File: driver.cpp                                  */
+/*The definition of all actions by driver           */ 
+/*Exacute all the actions                           */
+/*Yueyang (Jason) Pan                               */
+/****************************************************/
 #include "driver.h"
 #include "source.tab.hpp"
 
-driver::driver ()
-  : trace_parsing (false), trace_scanning (false)
+driver::driver (): trace_parsing (false), trace_scanning (false)
 {}
 
-int
-driver::parse (const std::string &f)
+int driver::parse (const std::string &f)
 {
   file = f;
   location.initialize (&file);

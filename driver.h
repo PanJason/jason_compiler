@@ -1,3 +1,10 @@
+/****************************************************/
+/*File: driver.h                                    */
+/*Driver Class for the compiller                    */
+/*This driver classs will contain all information & */ 
+/*Exacute all the actions                           */
+/*Yueyang (Jason) Pan                               */
+/****************************************************/
 #ifndef __DRIVER_H
 #define __DRIVER_H
 #include <string>
@@ -15,7 +22,7 @@ YY_DECL;
 class driver
 {
 public:
-  driver ();
+  driver();
 
   std::map<std::string, int> variables;
 

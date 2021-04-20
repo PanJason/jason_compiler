@@ -43,8 +43,22 @@
 
 #ifndef YY_YY_SOURCE_TAB_HPP_INCLUDED
 # define YY_YY_SOURCE_TAB_HPP_INCLUDED
+// "%code requires" blocks.
+#line 13 "source.y"
 
+    #include <string>
+    #include <algorithm>
+    #include <optional>
+    #include <vector>
+    #include <memory>
+    #include <utility>
+    #include <stdlib.h>
+    #include "global.h"
+    class driver;
 
+#line 60 "source.tab.hpp"
+
+# include <cassert>
 # include <cstdlib> // std::abort
 # include <iostream>
 # include <stdexcept>
@@ -87,7 +101,12 @@
 #else
 # define YY_CONSTEXPR
 #endif
-
+# include "location.hh"
+#include <typeinfo>
+#ifndef YY_ASSERT
+# include <cassert>
+# define YY_ASSERT assert
+#endif
 
 
 #ifndef YY_ATTRIBUTE_PURE
@@ -167,11 +186,11 @@
 
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 0
+# define YYDEBUG 1
 #endif
 
 namespace yy {
-#line 175 "source.tab.hpp"
+#line 194 "source.tab.hpp"
 
 
 
@@ -181,24 +200,294 @@ namespace yy {
   {
   public:
 #ifndef YYSTYPE
-    /// Symbol semantic values.
-    typedef int semantic_type;
+  /// A buffer to store and retrieve objects.
+  ///
+  /// Sort of a variant, but does not keep track of the nature
+  /// of the stored data, since that knowledge is available
+  /// via the current parser state.
+  class semantic_type
+  {
+  public:
+    /// Type of *this.
+    typedef semantic_type self_type;
+
+    /// Empty construction.
+    semantic_type () YY_NOEXCEPT
+      : yybuffer_ ()
+      , yytypeid_ (YY_NULLPTR)
+    {}
+
+    /// Construct and fill.
+    template <typename T>
+    semantic_type (YY_RVREF (T) t)
+      : yytypeid_ (&typeid (T))
+    {
+      YY_ASSERT (sizeof (T) <= size);
+      new (yyas_<T> ()) T (YY_MOVE (t));
+    }
+
+    /// Destruction, allowed only if empty.
+    ~semantic_type () YY_NOEXCEPT
+    {
+      YY_ASSERT (!yytypeid_);
+    }
+
+# if 201103L <= YY_CPLUSPLUS
+    /// Instantiate a \a T in here from \a t.
+    template <typename T, typename... U>
+    T&
+    emplace (U&&... u)
+    {
+      YY_ASSERT (!yytypeid_);
+      YY_ASSERT (sizeof (T) <= size);
+      yytypeid_ = & typeid (T);
+      return *new (yyas_<T> ()) T (std::forward <U>(u)...);
+    }
+# else
+    /// Instantiate an empty \a T in here.
+    template <typename T>
+    T&
+    emplace ()
+    {
+      YY_ASSERT (!yytypeid_);
+      YY_ASSERT (sizeof (T) <= size);
+      yytypeid_ = & typeid (T);
+      return *new (yyas_<T> ()) T ();
+    }
+
+    /// Instantiate a \a T in here from \a t.
+    template <typename T>
+    T&
+    emplace (const T& t)
+    {
+      YY_ASSERT (!yytypeid_);
+      YY_ASSERT (sizeof (T) <= size);
+      yytypeid_ = & typeid (T);
+      return *new (yyas_<T> ()) T (t);
+    }
+# endif
+
+    /// Instantiate an empty \a T in here.
+    /// Obsolete, use emplace.
+    template <typename T>
+    T&
+    build ()
+    {
+      return emplace<T> ();
+    }
+
+    /// Instantiate a \a T in here from \a t.
+    /// Obsolete, use emplace.
+    template <typename T>
+    T&
+    build (const T& t)
+    {
+      return emplace<T> (t);
+    }
+
+    /// Accessor to a built \a T.
+    template <typename T>
+    T&
+    as () YY_NOEXCEPT
+    {
+      YY_ASSERT (yytypeid_);
+      YY_ASSERT (*yytypeid_ == typeid (T));
+      YY_ASSERT (sizeof (T) <= size);
+      return *yyas_<T> ();
+    }
+
+    /// Const accessor to a built \a T (for %printer).
+    template <typename T>
+    const T&
+    as () const YY_NOEXCEPT
+    {
+      YY_ASSERT (yytypeid_);
+      YY_ASSERT (*yytypeid_ == typeid (T));
+      YY_ASSERT (sizeof (T) <= size);
+      return *yyas_<T> ();
+    }
+
+    /// Swap the content with \a that, of same type.
+    ///
+    /// Both variants must be built beforehand, because swapping the actual
+    /// data requires reading it (with as()), and this is not possible on
+    /// unconstructed variants: it would require some dynamic testing, which
+    /// should not be the variant's responsibility.
+    /// Swapping between built and (possibly) non-built is done with
+    /// self_type::move ().
+    template <typename T>
+    void
+    swap (self_type& that) YY_NOEXCEPT
+    {
+      YY_ASSERT (yytypeid_);
+      YY_ASSERT (*yytypeid_ == *that.yytypeid_);
+      std::swap (as<T> (), that.as<T> ());
+    }
+
+    /// Move the content of \a that to this.
+    ///
+    /// Destroys \a that.
+    template <typename T>
+    void
+    move (self_type& that)
+    {
+# if 201103L <= YY_CPLUSPLUS
+      emplace<T> (std::move (that.as<T> ()));
+# else
+      emplace<T> ();
+      swap<T> (that);
+# endif
+      that.destroy<T> ();
+    }
+
+# if 201103L <= YY_CPLUSPLUS
+    /// Move the content of \a that to this.
+    template <typename T>
+    void
+    move (self_type&& that)
+    {
+      emplace<T> (std::move (that.as<T> ()));
+      that.destroy<T> ();
+    }
+#endif
+
+    /// Copy the content of \a that to this.
+    template <typename T>
+    void
+    copy (const self_type& that)
+    {
+      emplace<T> (that.as<T> ());
+    }
+
+    /// Destroy the stored \a T.
+    template <typename T>
+    void
+    destroy ()
+    {
+      as<T> ().~T ();
+      yytypeid_ = YY_NULLPTR;
+    }
+
+  private:
+    /// Prohibit blind copies.
+    self_type& operator= (const self_type&);
+    semantic_type (const self_type&);
+
+    /// Accessor to raw memory as \a T.
+    template <typename T>
+    T*
+    yyas_ () YY_NOEXCEPT
+    {
+      void *yyp = yybuffer_.yyraw;
+      return static_cast<T*> (yyp);
+     }
+
+    /// Const accessor to raw memory as \a T.
+    template <typename T>
+    const T*
+    yyas_ () const YY_NOEXCEPT
+    {
+      const void *yyp = yybuffer_.yyraw;
+      return static_cast<const T*> (yyp);
+     }
+
+    /// An auxiliary type to compute the largest semantic type.
+    union union_type
+    {
+      // program
+      // CompUnit
+      // Decl
+      // ConstDecl
+      // ConstDefList
+      // ConstDef
+      // Dimension
+      // ConstInitVal
+      // ConstInitValArray
+      // ConstInitValList
+      // VarDecl
+      // VarDefList
+      // VarDef
+      // InitVal
+      // InitValArray
+      // InitValList
+      // FuncDef
+      // FuncFParams
+      // FuncFParam
+      // FuncFParamVar
+      // FuncFParamArray
+      // Block
+      // BlockItems
+      // BlockItem
+      // Stmt
+      // Assign_stmt
+      // Exp_stmt
+      // If_stmt
+      // While_stmt
+      // Cond_stmt
+      // Return_stmt
+      // Exp
+      // Cond
+      // LVal
+      // PrimaryExp
+      // UnaryExp
+      // FuncCallExp
+      // FuncRParams
+      // MulExp
+      // AddExp
+      // RelExp
+      // EqExp
+      // LAndExp
+      // LOrExp
+      // IDENT
+      char dummy1[sizeof (ASTPtr)];
+
+      // OCT_NUM
+      // DEC_NUM
+      // HEX_NUM
+      char dummy2[sizeof (int)];
+
+      // ID
+      char dummy3[sizeof (std::string)];
+    };
+
+    /// The size of the largest semantic type.
+    enum { size = sizeof (union_type) };
+
+    /// A buffer to store semantic values.
+    union
+    {
+      /// Strongest alignment constraints.
+      long double yyalign_me;
+      /// A buffer large enough to store any of the semantic values.
+      char yyraw[size];
+    } yybuffer_;
+
+    /// Whether the content is built: if defined, the name of the stored type.
+    const std::type_info *yytypeid_;
+  };
+
 #else
     typedef YYSTYPE semantic_type;
 #endif
+    /// Symbol locations.
+    typedef location location_type;
 
     /// Syntax errors thrown from user actions.
     struct syntax_error : std::runtime_error
     {
-      syntax_error (const std::string& m)
+      syntax_error (const location_type& l, const std::string& m)
         : std::runtime_error (m)
+        , location (l)
       {}
 
       syntax_error (const syntax_error& s)
         : std::runtime_error (s.what ())
+        , location (s.location)
       {}
 
       ~syntax_error () YY_NOEXCEPT YY_NOTHROW;
+
+      location_type location;
     };
 
     /// Tokens.
@@ -206,44 +495,45 @@ namespace yy {
     {
       enum yytokentype
       {
-        IF = 258,
-        THEN = 259,
-        ELSE = 260,
-        WHILE = 261,
-        BREAK = 262,
-        CONTINUE = 263,
-        RETURN = 264,
-        CONST = 265,
-        INT = 266,
-        VOID = 267,
-        ID = 268,
-        DEC_NUM = 269,
-        OCT_NUM = 270,
-        HEX_NUM = 271,
-        ASSIGN = 272,
-        SEMI = 273,
-        COMMA = 274,
-        LLPAREN = 275,
-        LRPAREN = 276,
-        MLPAREN = 277,
-        MRPAREN = 278,
-        SLPAREN = 279,
-        SRPAREN = 280,
-        NOT = 281,
-        EQ = 282,
-        NEQ = 283,
-        LT = 284,
-        GT = 285,
-        LTE = 286,
-        GTE = 287,
-        PLUS = 288,
-        MINUS = 289,
-        TIMES = 290,
-        OVER = 291,
-        MOD = 292,
-        AND = 293,
-        OR = 294,
-        ERROR = 295
+        TOK_IF = 258,
+        TOK_THEN = 259,
+        TOK_ELSE = 260,
+        TOK_WHILE = 261,
+        TOK_BREAK = 262,
+        TOK_CONTINUE = 263,
+        TOK_RETURN = 264,
+        TOK_CONST = 265,
+        TOK_INT = 266,
+        TOK_VOID = 267,
+        TOK_ASSIGN = 268,
+        TOK_SEMI = 269,
+        TOK_COMMA = 270,
+        TOK_LLPAREN = 271,
+        TOK_LRPAREN = 272,
+        TOK_MLPAREN = 273,
+        TOK_MRPAREN = 274,
+        TOK_SLPAREN = 275,
+        TOK_SRPAREN = 276,
+        TOK_NOT = 277,
+        TOK_EQ = 278,
+        TOK_NEQ = 279,
+        TOK_LT = 280,
+        TOK_GT = 281,
+        TOK_LTE = 282,
+        TOK_GTE = 283,
+        TOK_PLUS = 284,
+        TOK_MINUS = 285,
+        TOK_TIMES = 286,
+        TOK_OVER = 287,
+        TOK_MOD = 288,
+        TOK_AND = 289,
+        TOK_OR = 290,
+        TOK_ERROR = 291,
+        TOK_END = 292,
+        TOK_OCT_NUM = 293,
+        TOK_DEC_NUM = 294,
+        TOK_HEX_NUM = 295,
+        TOK_ID = 296
       };
     };
 
@@ -264,7 +554,7 @@ namespace yy {
     /// Expects its Base type to provide access to the symbol type
     /// via type_get ().
     ///
-    /// Provide access to semantic value.
+    /// Provide access to semantic value and location.
     template <typename Base>
     struct basic_symbol : Base
     {
@@ -274,6 +564,7 @@ namespace yy {
       /// Default constructor.
       basic_symbol ()
         : value ()
+        , location ()
       {}
 
 #if 201103L <= YY_CPLUSPLUS
@@ -283,12 +574,58 @@ namespace yy {
 
       /// Copy constructor.
       basic_symbol (const basic_symbol& that);
-      /// Constructor for valueless symbols.
-      basic_symbol (typename Base::kind_type t);
 
-      /// Constructor for symbols with semantic value.
-      basic_symbol (typename Base::kind_type t,
-                    YY_RVREF (semantic_type) v);
+      /// Constructor for valueless symbols, and symbols from each type.
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, location_type&& l)
+        : Base (t)
+        , location (std::move (l))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const location_type& l)
+        : Base (t)
+        , location (l)
+      {}
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, ASTPtr&& v, location_type&& l)
+        : Base (t)
+        , value (std::move (v))
+        , location (std::move (l))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const ASTPtr& v, const location_type& l)
+        : Base (t)
+        , value (v)
+        , location (l)
+      {}
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, int&& v, location_type&& l)
+        : Base (t)
+        , value (std::move (v))
+        , location (std::move (l))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const int& v, const location_type& l)
+        : Base (t)
+        , value (v)
+        , location (l)
+      {}
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, std::string&& v, location_type&& l)
+        : Base (t)
+        , value (std::move (v))
+        , location (std::move (l))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const std::string& v, const location_type& l)
+        : Base (t)
+        , value (v)
+        , location (l)
+      {}
+#endif
 
       /// Destroy the symbol.
       ~basic_symbol ()
@@ -299,6 +636,81 @@ namespace yy {
       /// Destroy contents, and record that is empty.
       void clear ()
       {
+        // User destructor.
+        symbol_number_type yytype = this->type_get ();
+        basic_symbol<Base>& yysym = *this;
+        (void) yysym;
+        switch (yytype)
+        {
+       default:
+          break;
+        }
+
+        // Type destructor.
+switch (yytype)
+    {
+      case 43: // program
+      case 44: // CompUnit
+      case 45: // Decl
+      case 46: // ConstDecl
+      case 47: // ConstDefList
+      case 48: // ConstDef
+      case 49: // Dimension
+      case 50: // ConstInitVal
+      case 51: // ConstInitValArray
+      case 53: // ConstInitValList
+      case 54: // VarDecl
+      case 55: // VarDefList
+      case 56: // VarDef
+      case 57: // InitVal
+      case 58: // InitValArray
+      case 59: // InitValList
+      case 60: // FuncDef
+      case 61: // FuncFParams
+      case 62: // FuncFParam
+      case 63: // FuncFParamVar
+      case 64: // FuncFParamArray
+      case 65: // Block
+      case 66: // BlockItems
+      case 67: // BlockItem
+      case 68: // Stmt
+      case 69: // Assign_stmt
+      case 70: // Exp_stmt
+      case 71: // If_stmt
+      case 72: // While_stmt
+      case 73: // Cond_stmt
+      case 74: // Return_stmt
+      case 75: // Exp
+      case 76: // Cond
+      case 77: // LVal
+      case 78: // PrimaryExp
+      case 79: // UnaryExp
+      case 80: // FuncCallExp
+      case 81: // FuncRParams
+      case 82: // MulExp
+      case 83: // AddExp
+      case 84: // RelExp
+      case 85: // EqExp
+      case 86: // LAndExp
+      case 87: // LOrExp
+      case 88: // IDENT
+        value.template destroy< ASTPtr > ();
+        break;
+
+      case 38: // OCT_NUM
+      case 39: // DEC_NUM
+      case 40: // HEX_NUM
+        value.template destroy< int > ();
+        break;
+
+      case 41: // ID
+        value.template destroy< std::string > ();
+        break;
+
+      default:
+        break;
+    }
+
         Base::clear ();
       }
 
@@ -310,6 +722,9 @@ namespace yy {
 
       /// The semantic value.
       semantic_type value;
+
+      /// The location.
+      location_type location;
 
     private:
 #if YY_CPLUSPLUS < 201103L
@@ -356,10 +771,57 @@ namespace yy {
 
     /// "External" symbols: returned by the scanner.
     struct symbol_type : basic_symbol<by_type>
-    {};
+    {
+      /// Superclass.
+      typedef basic_symbol<by_type> super_type;
+
+      /// Empty symbol.
+      symbol_type () {}
+
+      /// Constructor for valueless symbols, and symbols from each type.
+#if 201103L <= YY_CPLUSPLUS
+      symbol_type (int tok, location_type l)
+        : super_type(token_type (tok), std::move (l))
+      {
+        YY_ASSERT (tok == 0 || tok == token::TOK_IF || tok == token::TOK_THEN || tok == token::TOK_ELSE || tok == token::TOK_WHILE || tok == token::TOK_BREAK || tok == token::TOK_CONTINUE || tok == token::TOK_RETURN || tok == token::TOK_CONST || tok == token::TOK_INT || tok == token::TOK_VOID || tok == token::TOK_ASSIGN || tok == token::TOK_SEMI || tok == token::TOK_COMMA || tok == token::TOK_LLPAREN || tok == token::TOK_LRPAREN || tok == token::TOK_MLPAREN || tok == token::TOK_MRPAREN || tok == token::TOK_SLPAREN || tok == token::TOK_SRPAREN || tok == token::TOK_NOT || tok == token::TOK_EQ || tok == token::TOK_NEQ || tok == token::TOK_LT || tok == token::TOK_GT || tok == token::TOK_LTE || tok == token::TOK_GTE || tok == token::TOK_PLUS || tok == token::TOK_MINUS || tok == token::TOK_TIMES || tok == token::TOK_OVER || tok == token::TOK_MOD || tok == token::TOK_AND || tok == token::TOK_OR || tok == token::TOK_ERROR || tok == token::TOK_END);
+      }
+#else
+      symbol_type (int tok, const location_type& l)
+        : super_type(token_type (tok), l)
+      {
+        YY_ASSERT (tok == 0 || tok == token::TOK_IF || tok == token::TOK_THEN || tok == token::TOK_ELSE || tok == token::TOK_WHILE || tok == token::TOK_BREAK || tok == token::TOK_CONTINUE || tok == token::TOK_RETURN || tok == token::TOK_CONST || tok == token::TOK_INT || tok == token::TOK_VOID || tok == token::TOK_ASSIGN || tok == token::TOK_SEMI || tok == token::TOK_COMMA || tok == token::TOK_LLPAREN || tok == token::TOK_LRPAREN || tok == token::TOK_MLPAREN || tok == token::TOK_MRPAREN || tok == token::TOK_SLPAREN || tok == token::TOK_SRPAREN || tok == token::TOK_NOT || tok == token::TOK_EQ || tok == token::TOK_NEQ || tok == token::TOK_LT || tok == token::TOK_GT || tok == token::TOK_LTE || tok == token::TOK_GTE || tok == token::TOK_PLUS || tok == token::TOK_MINUS || tok == token::TOK_TIMES || tok == token::TOK_OVER || tok == token::TOK_MOD || tok == token::TOK_AND || tok == token::TOK_OR || tok == token::TOK_ERROR || tok == token::TOK_END);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      symbol_type (int tok, int v, location_type l)
+        : super_type(token_type (tok), std::move (v), std::move (l))
+      {
+        YY_ASSERT (tok == token::TOK_OCT_NUM || tok == token::TOK_DEC_NUM || tok == token::TOK_HEX_NUM);
+      }
+#else
+      symbol_type (int tok, const int& v, const location_type& l)
+        : super_type(token_type (tok), v, l)
+      {
+        YY_ASSERT (tok == token::TOK_OCT_NUM || tok == token::TOK_DEC_NUM || tok == token::TOK_HEX_NUM);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      symbol_type (int tok, std::string v, location_type l)
+        : super_type(token_type (tok), std::move (v), std::move (l))
+      {
+        YY_ASSERT (tok == token::TOK_ID);
+      }
+#else
+      symbol_type (int tok, const std::string& v, const location_type& l)
+        : super_type(token_type (tok), v, l)
+      {
+        YY_ASSERT (tok == token::TOK_ID);
+      }
+#endif
+    };
 
     /// Build a parser object.
-    parser ();
+    parser (driver& drv_yyarg);
     virtual ~parser ();
 
     /// Parse.  An alias for parse ().
@@ -385,12 +847,599 @@ namespace yy {
 #endif
 
     /// Report a syntax error.
+    /// \param loc    where the syntax error is found.
     /// \param msg    a description of the syntax error.
-    virtual void error (const std::string& msg);
+    virtual void error (const location_type& loc, const std::string& msg);
 
     /// Report a syntax error.
     void error (const syntax_error& err);
 
+    // Implementation of make_symbol for each symbol type.
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_IF (location_type l)
+      {
+        return symbol_type (token::TOK_IF, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_IF (const location_type& l)
+      {
+        return symbol_type (token::TOK_IF, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_THEN (location_type l)
+      {
+        return symbol_type (token::TOK_THEN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_THEN (const location_type& l)
+      {
+        return symbol_type (token::TOK_THEN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ELSE (location_type l)
+      {
+        return symbol_type (token::TOK_ELSE, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_ELSE (const location_type& l)
+      {
+        return symbol_type (token::TOK_ELSE, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_WHILE (location_type l)
+      {
+        return symbol_type (token::TOK_WHILE, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_WHILE (const location_type& l)
+      {
+        return symbol_type (token::TOK_WHILE, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_BREAK (location_type l)
+      {
+        return symbol_type (token::TOK_BREAK, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_BREAK (const location_type& l)
+      {
+        return symbol_type (token::TOK_BREAK, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_CONTINUE (location_type l)
+      {
+        return symbol_type (token::TOK_CONTINUE, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_CONTINUE (const location_type& l)
+      {
+        return symbol_type (token::TOK_CONTINUE, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_RETURN (location_type l)
+      {
+        return symbol_type (token::TOK_RETURN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_RETURN (const location_type& l)
+      {
+        return symbol_type (token::TOK_RETURN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_CONST (location_type l)
+      {
+        return symbol_type (token::TOK_CONST, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_CONST (const location_type& l)
+      {
+        return symbol_type (token::TOK_CONST, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_INT (location_type l)
+      {
+        return symbol_type (token::TOK_INT, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_INT (const location_type& l)
+      {
+        return symbol_type (token::TOK_INT, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_VOID (location_type l)
+      {
+        return symbol_type (token::TOK_VOID, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_VOID (const location_type& l)
+      {
+        return symbol_type (token::TOK_VOID, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ASSIGN (location_type l)
+      {
+        return symbol_type (token::TOK_ASSIGN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_ASSIGN (const location_type& l)
+      {
+        return symbol_type (token::TOK_ASSIGN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_SEMI (location_type l)
+      {
+        return symbol_type (token::TOK_SEMI, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_SEMI (const location_type& l)
+      {
+        return symbol_type (token::TOK_SEMI, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_COMMA (location_type l)
+      {
+        return symbol_type (token::TOK_COMMA, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_COMMA (const location_type& l)
+      {
+        return symbol_type (token::TOK_COMMA, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_LLPAREN (location_type l)
+      {
+        return symbol_type (token::TOK_LLPAREN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_LLPAREN (const location_type& l)
+      {
+        return symbol_type (token::TOK_LLPAREN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_LRPAREN (location_type l)
+      {
+        return symbol_type (token::TOK_LRPAREN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_LRPAREN (const location_type& l)
+      {
+        return symbol_type (token::TOK_LRPAREN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_MLPAREN (location_type l)
+      {
+        return symbol_type (token::TOK_MLPAREN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_MLPAREN (const location_type& l)
+      {
+        return symbol_type (token::TOK_MLPAREN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_MRPAREN (location_type l)
+      {
+        return symbol_type (token::TOK_MRPAREN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_MRPAREN (const location_type& l)
+      {
+        return symbol_type (token::TOK_MRPAREN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_SLPAREN (location_type l)
+      {
+        return symbol_type (token::TOK_SLPAREN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_SLPAREN (const location_type& l)
+      {
+        return symbol_type (token::TOK_SLPAREN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_SRPAREN (location_type l)
+      {
+        return symbol_type (token::TOK_SRPAREN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_SRPAREN (const location_type& l)
+      {
+        return symbol_type (token::TOK_SRPAREN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_NOT (location_type l)
+      {
+        return symbol_type (token::TOK_NOT, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_NOT (const location_type& l)
+      {
+        return symbol_type (token::TOK_NOT, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_EQ (location_type l)
+      {
+        return symbol_type (token::TOK_EQ, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_EQ (const location_type& l)
+      {
+        return symbol_type (token::TOK_EQ, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_NEQ (location_type l)
+      {
+        return symbol_type (token::TOK_NEQ, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_NEQ (const location_type& l)
+      {
+        return symbol_type (token::TOK_NEQ, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_LT (location_type l)
+      {
+        return symbol_type (token::TOK_LT, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_LT (const location_type& l)
+      {
+        return symbol_type (token::TOK_LT, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_GT (location_type l)
+      {
+        return symbol_type (token::TOK_GT, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_GT (const location_type& l)
+      {
+        return symbol_type (token::TOK_GT, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_LTE (location_type l)
+      {
+        return symbol_type (token::TOK_LTE, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_LTE (const location_type& l)
+      {
+        return symbol_type (token::TOK_LTE, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_GTE (location_type l)
+      {
+        return symbol_type (token::TOK_GTE, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_GTE (const location_type& l)
+      {
+        return symbol_type (token::TOK_GTE, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_PLUS (location_type l)
+      {
+        return symbol_type (token::TOK_PLUS, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_PLUS (const location_type& l)
+      {
+        return symbol_type (token::TOK_PLUS, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_MINUS (location_type l)
+      {
+        return symbol_type (token::TOK_MINUS, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_MINUS (const location_type& l)
+      {
+        return symbol_type (token::TOK_MINUS, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_TIMES (location_type l)
+      {
+        return symbol_type (token::TOK_TIMES, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_TIMES (const location_type& l)
+      {
+        return symbol_type (token::TOK_TIMES, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_OVER (location_type l)
+      {
+        return symbol_type (token::TOK_OVER, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_OVER (const location_type& l)
+      {
+        return symbol_type (token::TOK_OVER, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_MOD (location_type l)
+      {
+        return symbol_type (token::TOK_MOD, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_MOD (const location_type& l)
+      {
+        return symbol_type (token::TOK_MOD, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_AND (location_type l)
+      {
+        return symbol_type (token::TOK_AND, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_AND (const location_type& l)
+      {
+        return symbol_type (token::TOK_AND, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_OR (location_type l)
+      {
+        return symbol_type (token::TOK_OR, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_OR (const location_type& l)
+      {
+        return symbol_type (token::TOK_OR, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ERROR (location_type l)
+      {
+        return symbol_type (token::TOK_ERROR, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_ERROR (const location_type& l)
+      {
+        return symbol_type (token::TOK_ERROR, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_END (location_type l)
+      {
+        return symbol_type (token::TOK_END, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_END (const location_type& l)
+      {
+        return symbol_type (token::TOK_END, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_OCT_NUM (int v, location_type l)
+      {
+        return symbol_type (token::TOK_OCT_NUM, std::move (v), std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_OCT_NUM (const int& v, const location_type& l)
+      {
+        return symbol_type (token::TOK_OCT_NUM, v, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_DEC_NUM (int v, location_type l)
+      {
+        return symbol_type (token::TOK_DEC_NUM, std::move (v), std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_DEC_NUM (const int& v, const location_type& l)
+      {
+        return symbol_type (token::TOK_DEC_NUM, v, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_HEX_NUM (int v, location_type l)
+      {
+        return symbol_type (token::TOK_HEX_NUM, std::move (v), std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_HEX_NUM (const int& v, const location_type& l)
+      {
+        return symbol_type (token::TOK_HEX_NUM, v, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ID (std::string v, location_type l)
+      {
+        return symbol_type (token::TOK_ID, std::move (v), std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_ID (const std::string& v, const location_type& l)
+      {
+        return symbol_type (token::TOK_ID, v, l);
+      }
+#endif
 
 
   private:
@@ -462,10 +1511,13 @@ namespace yy {
     static const signed char yyr2_[];
 
 
-#if YYDEBUG
+    /// Convert the symbol name \a n to a form suitable for a diagnostic.
+    static std::string yytnamerr_ (const char *n);
+
+
     /// For a symbol, its name in clear.
     static const char* const yytname_[];
-
+#if YYDEBUG
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
     static const short yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
@@ -694,18 +1746,345 @@ namespace yy {
     enum
     {
       yyeof_ = 0,
-      yylast_ = 308,     ///< Last index in yytable_.
+      yylast_ = 323,     ///< Last index in yytable_.
       yynnts_ = 47,  ///< Number of nonterminal symbols.
       yyfinal_ = 16, ///< Termination state number.
-      yyntokens_ = 41  ///< Number of tokens.
+      yyntokens_ = 42  ///< Number of tokens.
     };
 
 
+    // User arguments.
+    driver& drv;
   };
 
+  inline
+  parser::token_number_type
+  parser::yytranslate_ (int t)
+  {
+    // YYTRANSLATE[TOKEN-NUM] -- Symbol number corresponding to
+    // TOKEN-NUM as returned by yylex.
+    static
+    const token_number_type
+    translate_table[] =
+    {
+       0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
+       5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
+      15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
+      25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
+      35,    36,    37,    38,    39,    40,    41
+    };
+    const int user_token_number_max_ = 296;
+
+    if (t <= 0)
+      return yyeof_;
+    else if (t <= user_token_number_max_)
+      return translate_table[t];
+    else
+      return yy_undef_token_;
+  }
+
+  // basic_symbol.
+#if 201103L <= YY_CPLUSPLUS
+  template <typename Base>
+  parser::basic_symbol<Base>::basic_symbol (basic_symbol&& that)
+    : Base (std::move (that))
+    , value ()
+    , location (std::move (that.location))
+  {
+    switch (this->type_get ())
+    {
+      case 43: // program
+      case 44: // CompUnit
+      case 45: // Decl
+      case 46: // ConstDecl
+      case 47: // ConstDefList
+      case 48: // ConstDef
+      case 49: // Dimension
+      case 50: // ConstInitVal
+      case 51: // ConstInitValArray
+      case 53: // ConstInitValList
+      case 54: // VarDecl
+      case 55: // VarDefList
+      case 56: // VarDef
+      case 57: // InitVal
+      case 58: // InitValArray
+      case 59: // InitValList
+      case 60: // FuncDef
+      case 61: // FuncFParams
+      case 62: // FuncFParam
+      case 63: // FuncFParamVar
+      case 64: // FuncFParamArray
+      case 65: // Block
+      case 66: // BlockItems
+      case 67: // BlockItem
+      case 68: // Stmt
+      case 69: // Assign_stmt
+      case 70: // Exp_stmt
+      case 71: // If_stmt
+      case 72: // While_stmt
+      case 73: // Cond_stmt
+      case 74: // Return_stmt
+      case 75: // Exp
+      case 76: // Cond
+      case 77: // LVal
+      case 78: // PrimaryExp
+      case 79: // UnaryExp
+      case 80: // FuncCallExp
+      case 81: // FuncRParams
+      case 82: // MulExp
+      case 83: // AddExp
+      case 84: // RelExp
+      case 85: // EqExp
+      case 86: // LAndExp
+      case 87: // LOrExp
+      case 88: // IDENT
+        value.move< ASTPtr > (std::move (that.value));
+        break;
+
+      case 38: // OCT_NUM
+      case 39: // DEC_NUM
+      case 40: // HEX_NUM
+        value.move< int > (std::move (that.value));
+        break;
+
+      case 41: // ID
+        value.move< std::string > (std::move (that.value));
+        break;
+
+      default:
+        break;
+    }
+
+  }
+#endif
+
+  template <typename Base>
+  parser::basic_symbol<Base>::basic_symbol (const basic_symbol& that)
+    : Base (that)
+    , value ()
+    , location (that.location)
+  {
+    switch (this->type_get ())
+    {
+      case 43: // program
+      case 44: // CompUnit
+      case 45: // Decl
+      case 46: // ConstDecl
+      case 47: // ConstDefList
+      case 48: // ConstDef
+      case 49: // Dimension
+      case 50: // ConstInitVal
+      case 51: // ConstInitValArray
+      case 53: // ConstInitValList
+      case 54: // VarDecl
+      case 55: // VarDefList
+      case 56: // VarDef
+      case 57: // InitVal
+      case 58: // InitValArray
+      case 59: // InitValList
+      case 60: // FuncDef
+      case 61: // FuncFParams
+      case 62: // FuncFParam
+      case 63: // FuncFParamVar
+      case 64: // FuncFParamArray
+      case 65: // Block
+      case 66: // BlockItems
+      case 67: // BlockItem
+      case 68: // Stmt
+      case 69: // Assign_stmt
+      case 70: // Exp_stmt
+      case 71: // If_stmt
+      case 72: // While_stmt
+      case 73: // Cond_stmt
+      case 74: // Return_stmt
+      case 75: // Exp
+      case 76: // Cond
+      case 77: // LVal
+      case 78: // PrimaryExp
+      case 79: // UnaryExp
+      case 80: // FuncCallExp
+      case 81: // FuncRParams
+      case 82: // MulExp
+      case 83: // AddExp
+      case 84: // RelExp
+      case 85: // EqExp
+      case 86: // LAndExp
+      case 87: // LOrExp
+      case 88: // IDENT
+        value.copy< ASTPtr > (YY_MOVE (that.value));
+        break;
+
+      case 38: // OCT_NUM
+      case 39: // DEC_NUM
+      case 40: // HEX_NUM
+        value.copy< int > (YY_MOVE (that.value));
+        break;
+
+      case 41: // ID
+        value.copy< std::string > (YY_MOVE (that.value));
+        break;
+
+      default:
+        break;
+    }
+
+  }
+
+
+
+  template <typename Base>
+  bool
+  parser::basic_symbol<Base>::empty () const YY_NOEXCEPT
+  {
+    return Base::type_get () == empty_symbol;
+  }
+
+  template <typename Base>
+  void
+  parser::basic_symbol<Base>::move (basic_symbol& s)
+  {
+    super_type::move (s);
+    switch (this->type_get ())
+    {
+      case 43: // program
+      case 44: // CompUnit
+      case 45: // Decl
+      case 46: // ConstDecl
+      case 47: // ConstDefList
+      case 48: // ConstDef
+      case 49: // Dimension
+      case 50: // ConstInitVal
+      case 51: // ConstInitValArray
+      case 53: // ConstInitValList
+      case 54: // VarDecl
+      case 55: // VarDefList
+      case 56: // VarDef
+      case 57: // InitVal
+      case 58: // InitValArray
+      case 59: // InitValList
+      case 60: // FuncDef
+      case 61: // FuncFParams
+      case 62: // FuncFParam
+      case 63: // FuncFParamVar
+      case 64: // FuncFParamArray
+      case 65: // Block
+      case 66: // BlockItems
+      case 67: // BlockItem
+      case 68: // Stmt
+      case 69: // Assign_stmt
+      case 70: // Exp_stmt
+      case 71: // If_stmt
+      case 72: // While_stmt
+      case 73: // Cond_stmt
+      case 74: // Return_stmt
+      case 75: // Exp
+      case 76: // Cond
+      case 77: // LVal
+      case 78: // PrimaryExp
+      case 79: // UnaryExp
+      case 80: // FuncCallExp
+      case 81: // FuncRParams
+      case 82: // MulExp
+      case 83: // AddExp
+      case 84: // RelExp
+      case 85: // EqExp
+      case 86: // LAndExp
+      case 87: // LOrExp
+      case 88: // IDENT
+        value.move< ASTPtr > (YY_MOVE (s.value));
+        break;
+
+      case 38: // OCT_NUM
+      case 39: // DEC_NUM
+      case 40: // HEX_NUM
+        value.move< int > (YY_MOVE (s.value));
+        break;
+
+      case 41: // ID
+        value.move< std::string > (YY_MOVE (s.value));
+        break;
+
+      default:
+        break;
+    }
+
+    location = YY_MOVE (s.location);
+  }
+
+  // by_type.
+  inline
+  parser::by_type::by_type ()
+    : type (empty_symbol)
+  {}
+
+#if 201103L <= YY_CPLUSPLUS
+  inline
+  parser::by_type::by_type (by_type&& that)
+    : type (that.type)
+  {
+    that.clear ();
+  }
+#endif
+
+  inline
+  parser::by_type::by_type (const by_type& that)
+    : type (that.type)
+  {}
+
+  inline
+  parser::by_type::by_type (token_type t)
+    : type (yytranslate_ (t))
+  {}
+
+  inline
+  void
+  parser::by_type::clear ()
+  {
+    type = empty_symbol;
+  }
+
+  inline
+  void
+  parser::by_type::move (by_type& that)
+  {
+    type = that.type;
+    that.clear ();
+  }
+
+  inline
+  int
+  parser::by_type::type_get () const YY_NOEXCEPT
+  {
+    return type;
+  }
 
 } // yy
-#line 709 "source.tab.hpp"
+#line 2088 "source.tab.hpp"
 
 
 

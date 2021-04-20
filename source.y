@@ -10,32 +10,47 @@
 %define parse.error verbose
 %define api.token.prefix {TOK_}
 
-%code{
-    #include "global.h"
-    #include "driver.h"
+%code requires{
     #include <string>
     #include <algorithm>
+    #include <optional>
+    #include <vector>
+    #include <memory>
+    #include <utility>
     #include <stdlib.h>
-    #define YYSTYPE ASTPtr
-    #define DEBUG
-}
-%code requires {
+    #include "global.h"
     class driver;
 }
+
 %language "c++"
 %locations
 %param { driver& drv }
 
-%token IF THEN ELSE WHILE BREAK CONTINUE RETURN
-%token CONST INT VOID
-%token ID DEC_NUM OCT_NUM HEX_NUM
-%token ASSIGN SEMI COMMA LLPAREN LRPAREN MLPAREN MRPAREN SLPAREN SRPAREN
-%token NOT EQ NEQ LT GT LTE GTE PLUS MINUS TIMES OVER MOD AND OR
+%code {
+    #include "driver.h"
+    #define DEBUG
+}
+
+
+%token IF THEN ELSE WHILE BREAK CONTINUE RETURN;
+%token CONST INT VOID;
+%token ASSIGN SEMI COMMA LLPAREN LRPAREN MLPAREN MRPAREN SLPAREN SRPAREN;
+%token NOT EQ NEQ LT GT LTE GTE PLUS MINUS TIMES OVER MOD AND OR;
 //%token SIN_COMMENT MUL_LCOMMENT MUL_RCOMMENT
-%token ERROR
+%token ERROR END
+
+%token <int> OCT_NUM DEC_NUM HEX_NUM
+%token <std::string> ID
+%type  <ASTPtr> program CompUnit Decl ConstDecl ConstDefList ConstDef
+Dimension ConstInitVal ConstInitValArray ConstInitValList VarDecl VarDefList
+InitVal VarDef InitValArray FuncDef InitValList FuncFParams FuncFParam
+FuncFParamVar FuncFParamArray Block BlockItems BlockItem Stmt Assign_stmt
+Exp_stmt If_stmt While_stmt Cond_stmt Return_stmt Exp Cond LVal PrimaryExp
+UnaryExp FuncCallExp FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp
+IDENT
 
 %% /* Grammar for SysY */
-program     : CompUnit {root = std::move($1); }
+program     : CompUnit {drv.root = std::move($1); }
             ;
 CompUnit    : Decl { 
     ASTPtrList units;
@@ -62,7 +77,7 @@ Decl        : ConstDecl {$$ = $1;}
             ;
 
 ConstDecl   : CONST INT ConstDefList SEMI { 
-    $$ =  std::make_shared<ConstDeclAST>(INT, std::move($3));}
+    $$ =  std::make_shared<ConstDeclAST>(token::TOK_INT, std::move($3));}
             ;
 
 ConstDefList : ConstDef {
@@ -79,11 +94,11 @@ ConstDefList : ConstDef {
 
 ConstDef    : IDENT EQ ConstInitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-    $$ = std::make_shared<ConstDefAST>(p_IdAST->id(),nullptr, std::move($3));
+    $$ = std::make_shared<ConstDefAST>(p_IdAST->id(), nullptr, std::move($3));
 }
             | IDENT Dimension EQ ConstInitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-    $$ = std::make_shared<ConstDefAST>(p_IdAST->id(),std::move($2), std::move($4));
+    $$ = std::make_shared<ConstDefAST>(p_IdAST->id(), std::move($2), std::move($4));
 }
             ;
 
@@ -127,7 +142,7 @@ ConstInitValList : ConstInitVal {
             ;
 
 VarDecl     : INT VarDefList SEMI {
-    $$ =  std::make_shared<VarDeclAST>(INT, std::move($2));
+    $$ =  std::make_shared<VarDeclAST>(token::TOK_INT, std::move($2));
 }
             ;
 
@@ -187,19 +202,19 @@ InitValList : InitVal {
 
 FuncDef     : VOID IDENT SLPAREN SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(VOID, p_IdAST->id(), nullptr, std::move($5));
+    $$ = std::make_shared<FuncDefAST>(token::TOK_VOID, p_IdAST->id(), nullptr, std::move($5));
 }
             | VOID IDENT SLPAREN FuncFParams SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(VOID, p_IdAST->id(), std::move($4), std::move($6));
+    $$ = std::make_shared<FuncDefAST>(token::TOK_VOID, p_IdAST->id(), std::move($4), std::move($6));
 }
             | INT IDENT SLPAREN SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(INT, p_IdAST->id(), nullptr, std::move($5));
+    $$ = std::make_shared<FuncDefAST>(token::TOK_INT, p_IdAST->id(), nullptr, std::move($5));
 }
             | INT IDENT SLPAREN FuncFParams SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(INT, p_IdAST->id(), std::move($4), std::move($6));
+    $$ = std::make_shared<FuncDefAST>(token::TOK_INT, p_IdAST->id(), std::move($4), std::move($6));
 }
             ;
 
@@ -222,17 +237,17 @@ FuncFParam  : FuncFParamVar { $$ = $1; }
 
 FuncFParamVar : INT IDENT {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncFParamVarAST>(INT, p_IdAST->id());
+    $$ = std::make_shared<FuncFParamVarAST>(token::TOK_INT, p_IdAST->id());
 }
             ;
 
 FuncFParamArray : INT IDENT MLPAREN MRPAREN {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST->id(), nullptr);
+    $$ = std::make_shared<FuncFParamArrayAST>(token::TOK_INT, p_IdAST->id(), nullptr);
 }
             | INT IDENT MLPAREN MRPAREN Dimension {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST->id(), std::move($5));
+    $$ = std::make_shared<FuncFParamArrayAST>(token::TOK_INT, p_IdAST->id(), std::move($5));
 }
             ;
 
@@ -300,10 +315,10 @@ While_stmt  : WHILE SLPAREN Cond SRPAREN Stmt {
             ;
 
 Cond_stmt   : BREAK SEMI {
-    $$ = std::make_shared<CondAST>(BREAK);
+    $$ = std::make_shared<CondAST>(token::TOK_BREAK);
 }
             | CONTINUE SEMI {
-    $$ = std::make_shared<CondAST>(CONTINUE);
+    $$ = std::make_shared<CondAST>(token::TOK_CONTINUE);
 }
             ;
 
@@ -311,7 +326,7 @@ Return_stmt : RETURN SEMI {
     $$ = std::make_shared<ReturnAST>(nullptr);
 }
             | RETURN Exp SEMI {
-    $$ = std::make_shared<ReturnAST>(std::move($1));
+    $$ = std::make_shared<ReturnAST>(std::move($2));
 }
             ;
 
@@ -331,21 +346,21 @@ LVal        : IDENT { $$ = $1; }
 PrimaryExp  : SLPAREN Exp SRPAREN { $$ = $2; }
             | LVal { $$ = $1; }
             | DEC_NUM {
-                $$ = std::make_shared<IntAST>(atoi(yytext));
+                $$ = std::make_shared<IntAST>($1);
                 #ifdef DEBUG
-                    printf("%d\n", atoi(yytext));
+                    printf("%d\n", $1);
                 #endif 
             }
             | OCT_NUM {
-                $$ = std::make_shared<IntAST>(strtol(yytext, NULL, 8));
+                $$ = std::make_shared<IntAST>($1);
                 #ifdef DEBUG
-                    printf("%d\n", strtol(yytext, NULL, 8));
+                    printf("%d\n", $1);
                 #endif
             }
             | HEX_NUM {
-                $$ = std::make_shared<IntAST>(strtol(yytext, NULL, 16));
+                $$ = std::make_shared<IntAST>($1);
                 #ifdef DEBUG
-                    printf("%d\n", strtol(yytext, NULL, 16));
+                    printf("%d\n", $1);
                 #endif
             }
             ;
@@ -353,13 +368,13 @@ PrimaryExp  : SLPAREN Exp SRPAREN { $$ = $2; }
 UnaryExp    : PrimaryExp { $$ = $1; }
             | FuncCallExp { $$ = $1; }
             | PLUS UnaryExp {
-                $$ = std::make_shared<UnaryAST>(PLUS, std::move($2));
+                $$ = std::make_shared<UnaryAST>(token::TOK_PLUS, std::move($2));
             }
             | MINUS UnaryExp {
-                $$ = std::make_shared<UnaryAST>(MINUS, std::move($2));
+                $$ = std::make_shared<UnaryAST>(token::TOK_MINUS, std::move($2));
             }
             | NOT UnaryExp {
-                $$ = std::make_shared<UnaryAST>(NOT, std::move($2));
+                $$ = std::make_shared<UnaryAST>(token::TOK_NOT, std::move($2));
             }
             ;
 
@@ -388,75 +403,80 @@ FuncRParams : Exp {
 
 MulExp      : UnaryExp { $$ = $1; }
             | MulExp TIMES UnaryExp {
-                $$ = std::make_shared<BinaryAST>(TIMES,
+                $$ = std::make_shared<BinaryAST>(token::TOK_TIMES,
                 std::move($1), std::move($3));
             }
             | MulExp OVER UnaryExp {
-                $$ = std::make_shared<BinaryAST>(OVER,
+                $$ = std::make_shared<BinaryAST>(token::TOK_OVER,
                 std::move($1), std::move($3));
             }
             | MulExp MOD UnaryExp {
-                $$ = std::make_shared<BinaryAST>(MOD,
+                $$ = std::make_shared<BinaryAST>(token::TOK_MOD,
                 std::move($1), std::move($3));
             }
             ;
 
-AddExp      : MulExp { $$ = $1 }
+AddExp      : MulExp { $$ = $1; }
             | AddExp PLUS MulExp {
-                $$ = std::make_shared<BinaryAST>(PLUS,
+                $$ = std::make_shared<BinaryAST>(token::TOK_PLUS,
                 std::move($1), std::move($3));
             }
             | AddExp MINUS MulExp {
-                $$ = std::make_shared<BinaryAST>(MINUS,
+                $$ = std::make_shared<BinaryAST>(token::TOK_MINUS,
                 std::move($1), std::move($3));
             }
             ;
 
 RelExp      : AddExp { $$ = $1; }
             | RelExp LT AddExp {
-                $$ = std::make_shared<BinaryAST>(LT,
+                $$ = std::make_shared<BinaryAST>(token::TOK_LT,
                 std::move($1), std::move($3));
             }
             | RelExp GT AddExp {
-                $$ = std::make_shared<BinaryAST>(GT,
+                $$ = std::make_shared<BinaryAST>(token::TOK_GT,
                 std::move($1), std::move($3));
             }
             | RelExp LTE AddExp {
-                $$ = std::make_shared<BinaryAST>(LTE,
+                $$ = std::make_shared<BinaryAST>(token::TOK_LTE,
                 std::move($1), std::move($3));
             }
             | RelExp GTE AddExp {
-                $$ = std::make_shared<BinaryAST>(GTE,
+                $$ = std::make_shared<BinaryAST>(token::TOK_GTE,
                 std::move($1), std::move($3));
             }
             ;
 
 EqExp       : RelExp { $$ = $1; }
             | EqExp EQ RelExp {
-                $$ = std::make_shared<BinaryAST>(EQ,
+                $$ = std::make_shared<BinaryAST>(token::TOK_EQ,
                 std::move($1), std::move($3));
             }
             | EqExp NEQ RelExp {
-                $$ = std::make_shared<BinaryAST>(NEQ,
+                $$ = std::make_shared<BinaryAST>(token::TOK_NEQ,
                 std::move($1), std::move($3));
             }
             ;
 
 LAndExp     : EqExp { $$ = $1; }
             | LAndExp AND EqExp {
-                $$ = std::make_shared<BinaryAST>(AND,
+                $$ = std::make_shared<BinaryAST>(token::TOK_AND,
                 std::move($1), std::move($3));
             }
 
 LOrExp      : LAndExp { $$ = $1; }
             | LOrExp OR LAndExp {
-                $$ = std::make_shared<BinaryAST>(OR,
+                $$ = std::make_shared<BinaryAST>(token::TOK_OR,
                 std::move($1), std::move($3));
             }
 
 IDENT       : ID{
-    $$ = std::make_unique<IdAST>(yytext);
+    $$ = std::make_unique<IdAST>($1);
 }
             ;
 
 %%
+
+void yy::parser::error(const location_type& l, const std::string &m)
+{
+    std::cerr << l << ":" <<m <<std::endl;
+}

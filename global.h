@@ -1,5 +1,5 @@
 /****************************************************/
-/*File: jason.y                                     */
+/*File: global.h                                    */
 /*Define Global Variables and data types            */
 /*Yueyang (Jason) Pan                               */
 /****************************************************/
@@ -13,7 +13,7 @@
 
 #include <iostream>
 
-extern int lineno;
+
 class BaseAst {
 public:
     virtual ~BaseAst() = default;
@@ -57,15 +57,15 @@ private:
 
 class ConstDefAST : public BaseAst{
 public:
-    ConstDefAST(const std::string &id, ASTPtrList const_exprs, ASTPtr const_init_val)
+    ConstDefAST(const std::string &id, ASTPtr const_exprs, ASTPtr const_init_val)
     : _id(id), _const_exprs(std::move(const_exprs)), _const_init_val(std::move(const_init_val)) {}
     std::optional<int> Eval() const override;
     const std::string &id() const {return _id;}
-    const ASTPtrList &const_exprs() const {return _const_exprs;}
+    const ASTPtr &const_exprs() const {return _const_exprs;}
     const ASTPtr &const_init_val() const {return _const_init_val; }
 private:
     std::string _id;
-    ASTPtrList _const_exprs;
+    ASTPtr _const_exprs;
     ASTPtr _const_init_val;
 };
 
