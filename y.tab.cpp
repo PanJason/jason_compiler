@@ -172,7 +172,7 @@
 
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 1
+# define YYDEBUG 0
 #endif
 
 namespace yy {
@@ -467,10 +467,10 @@ namespace yy {
     static const signed char yyr2_[];
 
 
-#if YYDEBUG
+
     /// For a symbol, its name in clear.
     static const char* const yytname_[];
-
+#if YYDEBUG
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
     static const short yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
@@ -1300,7 +1300,7 @@ namespace yy {
 #line 60 "jason.ypp"
                                           {
     auto p_ConstDefListAST = std::dynamic_pointer_cast<ConstDefListAST>(yystack_[2].value);
-    p_ConstDefListAST.const_defs().push_back(std::move(yystack_[0].value));
+    p_ConstDefListAST->const_defs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_ConstDefListAST;
 }
 #line 1307 "y.tab.c"
@@ -1310,7 +1310,7 @@ namespace yy {
 #line 67 "jason.ypp"
                                     {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value);
-    yylhs.value = std::make_shared<ConstDefAST>(p_IdAST.id(),nullptr, std::move(yystack_[0].value));
+    yylhs.value = std::make_shared<ConstDefAST>(p_IdAST->id(),nullptr, std::move(yystack_[0].value));
 }
 #line 1316 "y.tab.c"
     break;
@@ -1319,7 +1319,7 @@ namespace yy {
 #line 71 "jason.ypp"
                                               {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
-    yylhs.value = std::make_shared<ConstDefAST>(p_IdAST.id(),std::move(yystack_[2].value), std::move(yystack_[0].value));
+    yylhs.value = std::make_shared<ConstDefAST>(p_IdAST->id(),std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
 #line 1325 "y.tab.c"
     break;
@@ -1338,7 +1338,7 @@ namespace yy {
 #line 82 "jason.ypp"
                                              {
     auto p_DimensionAST = std::dynamic_pointer_cast<DimensionAST>(yystack_[3].value);
-    p_DimensionAST.dims().push_back(std::move(yystack_[1].value));
+    p_DimensionAST->dims().push_back(std::move(yystack_[1].value));
     yylhs.value = p_DimensionAST;            
 }
 #line 1345 "y.tab.c"
@@ -1386,7 +1386,7 @@ namespace yy {
 #line 109 "jason.ypp"
                                                   {
     auto p_ConstInitValList = std::dynamic_pointer_cast<ConstInitValAST>(yystack_[2].value);
-    p_ConstInitValList.const_exprs().push_back(std::move(yystack_[0].value));
+    p_ConstInitValList->const_exprs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_ConstInitValList;
 }
 #line 1393 "y.tab.c"
@@ -1414,7 +1414,7 @@ namespace yy {
 #line 126 "jason.ypp"
                                       {
     auto p_VarDefList = std::dynamic_pointer_cast<VarDefListAST>(yystack_[2].value);
-    p_VarDefList.var_defs().push_back(std::move(yystack_[0].value));
+    p_VarDefList->var_defs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_VarDefList;
 }
 #line 1421 "y.tab.c"
@@ -1424,7 +1424,7 @@ namespace yy {
 #line 133 "jason.ypp"
                     {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[0].value);
-    yylhs.value = std::make_shared<VarDefAST>(p_IdAST.id(), nullptr, nullptr);
+    yylhs.value = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, nullptr);
 }
 #line 1430 "y.tab.c"
     break;
@@ -1433,7 +1433,7 @@ namespace yy {
 #line 137 "jason.ypp"
                                {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value);
-    yylhs.value = std::make_shared<VarDefAST>(p_IdAST.id(), nullptr, std::move(yystack_[0].value));
+    yylhs.value = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, std::move(yystack_[0].value));
 }
 #line 1439 "y.tab.c"
     break;
@@ -1442,7 +1442,7 @@ namespace yy {
 #line 141 "jason.ypp"
                               {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[1].value);
-    yylhs.value = std::make_shared<VarDefAST>(p_IdAST.id(), std::move(yystack_[0].value), nullptr);
+    yylhs.value = std::make_shared<VarDefAST>(p_IdAST->id(), std::move(yystack_[0].value), nullptr);
 }
 #line 1448 "y.tab.c"
     break;
@@ -1451,7 +1451,7 @@ namespace yy {
 #line 145 "jason.ypp"
                                          {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
-    yylhs.value = std::make_shared<VarDefAST>(p_IdAST.id(), std::move(yystack_[2].value), std::move(yystack_[0].value));
+    yylhs.value = std::make_shared<VarDefAST>(p_IdAST->id(), std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
 #line 1457 "y.tab.c"
     break;
@@ -1498,7 +1498,7 @@ namespace yy {
 #line 168 "jason.ypp"
                                         {
     auto p_InitValList = std::dynamic_pointer_cast<InitValAST>(yystack_[2].value);
-    p_InitValList.exprs().push_back(std::move(yystack_[0].value));
+    p_InitValList->exprs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_InitValList;
 }
 #line 1505 "y.tab.c"
@@ -1508,7 +1508,7 @@ namespace yy {
 #line 175 "jason.ypp"
                                                {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
-    yylhs.value = std::make_shared<FuncDefAST>(VOID, p_IdAST.id(), nullptr, std::move(yystack_[0].value));
+    yylhs.value = std::make_shared<FuncDefAST>(VOID, p_IdAST->id(), nullptr, std::move(yystack_[0].value));
 }
 #line 1514 "y.tab.c"
     break;
@@ -1517,7 +1517,7 @@ namespace yy {
 #line 179 "jason.ypp"
                                                            {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[4].value);
-    yylhs.value = std::make_shared<FuncDefAST>(VOID, p_IdAST.id(), std::move(yystack_[2].value), std::move(yystack_[0].value));
+    yylhs.value = std::make_shared<FuncDefAST>(VOID, p_IdAST->id(), std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
 #line 1523 "y.tab.c"
     break;
@@ -1526,7 +1526,7 @@ namespace yy {
 #line 183 "jason.ypp"
                                               {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
-    yylhs.value = std::make_shared<FuncDefAST>(INT, p_IdAST.id(), nullptr, std::move(yystack_[0].value));
+    yylhs.value = std::make_shared<FuncDefAST>(INT, p_IdAST->id(), nullptr, std::move(yystack_[0].value));
 }
 #line 1532 "y.tab.c"
     break;
@@ -1535,7 +1535,7 @@ namespace yy {
 #line 187 "jason.ypp"
                                                           {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[4].value);
-    yylhs.value = std::make_shared<FuncDefAST>(INT, p_IdAST.id(), std::move(yystack_[2].value), std::move(yystack_[0].value));
+    yylhs.value = std::make_shared<FuncDefAST>(INT, p_IdAST->id(), std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
 #line 1541 "y.tab.c"
     break;
@@ -1554,7 +1554,7 @@ namespace yy {
 #line 198 "jason.ypp"
                                            {
     auto p_FuncFParams = std::dynamic_pointer_cast<FuncFParamsAST>(yystack_[2].value);
-    p_FuncFParams.param_list().push_back(std::move(yystack_[0].value));
+    p_FuncFParams->param_list().push_back(std::move(yystack_[0].value));
     yylhs.value = p_FuncFParams;
 }
 #line 1561 "y.tab.c"
@@ -1576,7 +1576,7 @@ namespace yy {
 #line 210 "jason.ypp"
                           {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[0].value);
-    yylhs.value = std::make_shared<FuncFParamVarAST>(INT, p_IdAST.id());
+    yylhs.value = std::make_shared<FuncFParamVarAST>(INT, p_IdAST->id());
 }
 #line 1582 "y.tab.c"
     break;
@@ -1585,7 +1585,7 @@ namespace yy {
 #line 216 "jason.ypp"
                                             {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value);
-    yylhs.value = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST.id(), nullptr);
+    yylhs.value = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST->id(), nullptr);
 }
 #line 1591 "y.tab.c"
     break;
@@ -1594,7 +1594,7 @@ namespace yy {
 #line 220 "jason.ypp"
                                                   {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
-    yylhs.value = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST.id(), std::move(yystack_[0].value));
+    yylhs.value = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST->id(), std::move(yystack_[0].value));
 }
 #line 1600 "y.tab.c"
     break;
@@ -1629,7 +1629,7 @@ namespace yy {
 #line 239 "jason.ypp"
                                    {
     auto p_BlockItems = std::dynamic_pointer_cast<BlockItemsAST>(yystack_[1].value);
-    p_BlockItems.items().push_back(std::move(yystack_[0].value));
+    p_BlockItems->items().push_back(std::move(yystack_[0].value));
     yylhs.value = p_BlockItems;
 }
 #line 1636 "y.tab.c"
@@ -1787,7 +1787,7 @@ namespace yy {
 
   case 72:
 #line 311 "jason.ypp"
-                    { yylhs.value = yystack_[0].value }
+                    { yylhs.value = yystack_[0].value; }
 #line 1792 "y.tab.c"
     break;
 
@@ -1795,7 +1795,7 @@ namespace yy {
 #line 312 "jason.ypp"
                               {
                 auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[1].value); 
-                yylhs.value = std::make_shared<ArrayAST>(p_IdAST.id(), std::move(yystack_[0].value));
+                yylhs.value = std::make_shared<ArrayAST>(p_IdAST->id(), std::move(yystack_[0].value));
             }
 #line 1801 "y.tab.c"
     break;
@@ -1808,7 +1808,7 @@ namespace yy {
 
   case 75:
 #line 319 "jason.ypp"
-                   { yylhs.value = yystack_[0].value}
+                   { yylhs.value = yystack_[0].value; }
 #line 1813 "y.tab.c"
     break;
 
@@ -1885,7 +1885,7 @@ namespace yy {
 #line 353 "jason.ypp"
                                     {
                 auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value);
-                yylhs.value = std::make_shared<FuncCallAST>(p_IdAST.id(), nullptr); 
+                yylhs.value = std::make_shared<FuncCallAST>(p_IdAST->id(), nullptr); 
             }
 #line 1891 "y.tab.c"
     break;
@@ -1894,7 +1894,7 @@ namespace yy {
 #line 357 "jason.ypp"
                                                 {
                 auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
-                yylhs.value = std::make_shared<FuncCallAST>(p_IdAST.id(), std::move(yystack_[1].value)); 
+                yylhs.value = std::make_shared<FuncCallAST>(p_IdAST->id(), std::move(yystack_[1].value)); 
             }
 #line 1900 "y.tab.c"
     break;
@@ -1913,7 +1913,7 @@ namespace yy {
 #line 368 "jason.ypp"
                                     {
     auto p_FuncRParams = std::dynamic_pointer_cast<FuncRParamsAST>(yystack_[2].value);
-    p_FuncRParams.exprs().push_back(std::move(yystack_[0].value));
+    p_FuncRParams->exprs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_FuncRParams;
 }
 #line 1920 "y.tab.c"
@@ -2459,7 +2459,7 @@ namespace yy {
   };
 
 
-#if YYDEBUG
+
   // YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
   // First, the terminals, then, starting at \a yyntokens_, nonterminals.
   const char*
@@ -2481,7 +2481,7 @@ namespace yy {
   "LAndExp", "LOrExp", "IDENT", YY_NULLPTR
   };
 
-
+#if YYDEBUG
   const short
   parser::yyrline_[] =
   {

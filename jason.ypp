@@ -59,18 +59,18 @@ ConstDefList : ConstDef {
 }
             | ConstDefList COMMA ConstDef {
     auto p_ConstDefListAST = std::dynamic_pointer_cast<ConstDefListAST>($1);
-    p_ConstDefListAST.const_defs().push_back(std::move($3));
+    p_ConstDefListAST->const_defs().push_back(std::move($3));
     $$ = p_ConstDefListAST;
 }
             ;
 
 ConstDef    : IDENT EQ ConstInitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-    $$ = std::make_shared<ConstDefAST>(p_IdAST.id(),nullptr, std::move($3));
+    $$ = std::make_shared<ConstDefAST>(p_IdAST->id(),nullptr, std::move($3));
 }
             | IDENT Dimension EQ ConstInitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-    $$ = std::make_shared<ConstDefAST>(p_IdAST.id(),std::move($2), std::move($4));
+    $$ = std::make_shared<ConstDefAST>(p_IdAST->id(),std::move($2), std::move($4));
 }
             ;
 
@@ -81,7 +81,7 @@ Dimension   : MLPAREN Exp MRPAREN {
 }
             | Dimension MLPAREN Exp MRPAREN  {
     auto p_DimensionAST = std::dynamic_pointer_cast<DimensionAST>($1);
-    p_DimensionAST.dims().push_back(std::move($3));
+    p_DimensionAST->dims().push_back(std::move($3));
     $$ = p_DimensionAST;            
 }
             ;
@@ -108,7 +108,7 @@ ConstInitValList : ConstInitVal {
 }
             | ConstInitValList COMMA ConstInitVal {
     auto p_ConstInitValList = std::dynamic_pointer_cast<ConstInitValAST>($1);
-    p_ConstInitValList.const_exprs().push_back(std::move($3));
+    p_ConstInitValList->const_exprs().push_back(std::move($3));
     $$ = p_ConstInitValList;
 }
             ;
@@ -125,26 +125,26 @@ VarDefList  : VarDef {
 }
             | VarDefList COMMA VarDef {
     auto p_VarDefList = std::dynamic_pointer_cast<VarDefListAST>($1);
-    p_VarDefList.var_defs().push_back(std::move($3));
+    p_VarDefList->var_defs().push_back(std::move($3));
     $$ = p_VarDefList;
 }
             ;
 
 VarDef      : IDENT {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-    $$ = std::make_shared<VarDefAST>(p_IdAST.id(), nullptr, nullptr);
+    $$ = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, nullptr);
 }
             | IDENT EQ InitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-    $$ = std::make_shared<VarDefAST>(p_IdAST.id(), nullptr, std::move($3));
+    $$ = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, std::move($3));
 }
             | IDENT Dimension {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-    $$ = std::make_shared<VarDefAST>(p_IdAST.id(), std::move($2), nullptr);
+    $$ = std::make_shared<VarDefAST>(p_IdAST->id(), std::move($2), nullptr);
 }
             | IDENT Dimension EQ InitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-    $$ = std::make_shared<VarDefAST>(p_IdAST.id(), std::move($2), std::move($4));
+    $$ = std::make_shared<VarDefAST>(p_IdAST->id(), std::move($2), std::move($4));
 }
             ;
 
@@ -167,26 +167,26 @@ InitValList : InitVal {
 }
             | InitValList COMMA InitVal {
     auto p_InitValList = std::dynamic_pointer_cast<InitValAST>($1);
-    p_InitValList.exprs().push_back(std::move($3));
+    p_InitValList->exprs().push_back(std::move($3));
     $$ = p_InitValList;
 }
             ;
 
 FuncDef     : VOID IDENT SLPAREN SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(VOID, p_IdAST.id(), nullptr, std::move($5));
+    $$ = std::make_shared<FuncDefAST>(VOID, p_IdAST->id(), nullptr, std::move($5));
 }
             | VOID IDENT SLPAREN FuncFParams SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(VOID, p_IdAST.id(), std::move($4), std::move($6));
+    $$ = std::make_shared<FuncDefAST>(VOID, p_IdAST->id(), std::move($4), std::move($6));
 }
             | INT IDENT SLPAREN SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(INT, p_IdAST.id(), nullptr, std::move($5));
+    $$ = std::make_shared<FuncDefAST>(INT, p_IdAST->id(), nullptr, std::move($5));
 }
             | INT IDENT SLPAREN FuncFParams SRPAREN Block {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncDefAST>(INT, p_IdAST.id(), std::move($4), std::move($6));
+    $$ = std::make_shared<FuncDefAST>(INT, p_IdAST->id(), std::move($4), std::move($6));
 }
             ;
 
@@ -197,7 +197,7 @@ FuncFParams : FuncFParam {
 }
             | FuncFParams COMMA FuncFParam {
     auto p_FuncFParams = std::dynamic_pointer_cast<FuncFParamsAST>($1);
-    p_FuncFParams.param_list().push_back(std::move($3));
+    p_FuncFParams->param_list().push_back(std::move($3));
     $$ = p_FuncFParams;
 }
             ;
@@ -209,17 +209,17 @@ FuncFParam  : FuncFParamVar { $$ = $1; }
 
 FuncFParamVar : INT IDENT {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncFParamVarAST>(INT, p_IdAST.id());
+    $$ = std::make_shared<FuncFParamVarAST>(INT, p_IdAST->id());
 }
             ;
 
 FuncFParamArray : INT IDENT MLPAREN MRPAREN {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST.id(), nullptr);
+    $$ = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST->id(), nullptr);
 }
             | INT IDENT MLPAREN MRPAREN Dimension {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($2);
-    $$ = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST.id(), std::move($5));
+    $$ = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST->id(), std::move($5));
 }
             ;
 
@@ -238,7 +238,7 @@ BlockItems  : BlockItem {
 }
             | BlockItems BlockItem {
     auto p_BlockItems = std::dynamic_pointer_cast<BlockItemsAST>($1);
-    p_BlockItems.items().push_back(std::move($2));
+    p_BlockItems->items().push_back(std::move($2));
     $$ = p_BlockItems;
 }
             ;
@@ -308,15 +308,15 @@ Exp         : AddExp { $$ = $1; }
 Cond        : LOrExp { $$ = $1; }
             ;
 
-LVal        : IDENT { $$ = $1 }
+LVal        : IDENT { $$ = $1; }
             | IDENT Dimension {
                 auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1); 
-                $$ = std::make_shared<ArrayAST>(p_IdAST.id(), std::move($2));
+                $$ = std::make_shared<ArrayAST>(p_IdAST->id(), std::move($2));
             }
             ;
 
 PrimaryExp  : SLPAREN Exp SRPAREN { $$ = $2; }
-            | LVal { $$ = $1}
+            | LVal { $$ = $1; }
             | DEC_NUM {
                 $$ = std::make_shared<IntAST>(atoi(yytext));
                 #ifdef DEBUG
@@ -352,11 +352,11 @@ UnaryExp    : PrimaryExp { $$ = $1; }
 
 FuncCallExp : IDENT SLPAREN SRPAREN {
                 auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-                $$ = std::make_shared<FuncCallAST>(p_IdAST.id(), nullptr); 
+                $$ = std::make_shared<FuncCallAST>(p_IdAST->id(), nullptr); 
             }
             | IDENT SLPAREN FuncRParams SRPAREN {
                 auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
-                $$ = std::make_shared<FuncCallAST>(p_IdAST.id(), std::move($3)); 
+                $$ = std::make_shared<FuncCallAST>(p_IdAST->id(), std::move($3)); 
             }
             ;
 
@@ -367,7 +367,7 @@ FuncRParams : Exp {
 }
             | FuncRParams COMMA Exp {
     auto p_FuncRParams = std::dynamic_pointer_cast<FuncRParamsAST>($1);
-    p_FuncRParams.exprs().push_back(std::move($3));
+    p_FuncRParams->exprs().push_back(std::move($3));
     $$ = p_FuncRParams;
 }
             ;
