@@ -36,7 +36,7 @@
 
 
 // First part of user prologue.
-#line 6 "jason.ypp"
+#line 6 "source.y"
 
     #include "global.h"
     #include <algorithm>
@@ -45,677 +45,10 @@
     #define DEBUG
     static ASTPtr root;
 
-#line 49 "y.tab.c"
+#line 49 "source.tab.cpp"
 
 
-
-
-# include <cstdlib> // std::abort
-# include <iostream>
-# include <stdexcept>
-# include <string>
-# include <vector>
-
-#if defined __cplusplus
-# define YY_CPLUSPLUS __cplusplus
-#else
-# define YY_CPLUSPLUS 199711L
-#endif
-
-// Support move semantics when possible.
-#if 201103L <= YY_CPLUSPLUS
-# define YY_MOVE           std::move
-# define YY_MOVE_OR_COPY   move
-# define YY_MOVE_REF(Type) Type&&
-# define YY_RVREF(Type)    Type&&
-# define YY_COPY(Type)     Type
-#else
-# define YY_MOVE
-# define YY_MOVE_OR_COPY   copy
-# define YY_MOVE_REF(Type) Type&
-# define YY_RVREF(Type)    const Type&
-# define YY_COPY(Type)     const Type&
-#endif
-
-// Support noexcept when possible.
-#if 201103L <= YY_CPLUSPLUS
-# define YY_NOEXCEPT noexcept
-# define YY_NOTHROW
-#else
-# define YY_NOEXCEPT
-# define YY_NOTHROW throw ()
-#endif
-
-// Support constexpr when possible.
-#if 201703 <= YY_CPLUSPLUS
-# define YY_CONSTEXPR constexpr
-#else
-# define YY_CONSTEXPR
-#endif
-
-
-
-#ifndef YY_ATTRIBUTE_PURE
-# if defined __GNUC__ && 2 < __GNUC__ + (96 <= __GNUC_MINOR__)
-#  define YY_ATTRIBUTE_PURE __attribute__ ((__pure__))
-# else
-#  define YY_ATTRIBUTE_PURE
-# endif
-#endif
-
-#ifndef YY_ATTRIBUTE_UNUSED
-# if defined __GNUC__ && 2 < __GNUC__ + (7 <= __GNUC_MINOR__)
-#  define YY_ATTRIBUTE_UNUSED __attribute__ ((__unused__))
-# else
-#  define YY_ATTRIBUTE_UNUSED
-# endif
-#endif
-
-/* Suppress unused-variable warnings by "using" E.  */
-#if ! defined lint || defined __GNUC__
-# define YYUSE(E) ((void) (E))
-#else
-# define YYUSE(E) /* empty */
-#endif
-
-#if defined __GNUC__ && ! defined __ICC && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
-/* Suppress an incorrect diagnostic about yylval being uninitialized.  */
-# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                            \
-    _Pragma ("GCC diagnostic push")                                     \
-    _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")              \
-    _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
-# define YY_IGNORE_MAYBE_UNINITIALIZED_END      \
-    _Pragma ("GCC diagnostic pop")
-#else
-# define YY_INITIAL_VALUE(Value) Value
-#endif
-#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_END
-#endif
-#ifndef YY_INITIAL_VALUE
-# define YY_INITIAL_VALUE(Value) /* Nothing. */
-#endif
-
-#if defined __cplusplus && defined __GNUC__ && ! defined __ICC && 6 <= __GNUC__
-# define YY_IGNORE_USELESS_CAST_BEGIN                          \
-    _Pragma ("GCC diagnostic push")                            \
-    _Pragma ("GCC diagnostic ignored \"-Wuseless-cast\"")
-# define YY_IGNORE_USELESS_CAST_END            \
-    _Pragma ("GCC diagnostic pop")
-#endif
-#ifndef YY_IGNORE_USELESS_CAST_BEGIN
-# define YY_IGNORE_USELESS_CAST_BEGIN
-# define YY_IGNORE_USELESS_CAST_END
-#endif
-
-# ifndef YY_CAST
-#  ifdef __cplusplus
-#   define YY_CAST(Type, Val) static_cast<Type> (Val)
-#   define YY_REINTERPRET_CAST(Type, Val) reinterpret_cast<Type> (Val)
-#  else
-#   define YY_CAST(Type, Val) ((Type) (Val))
-#   define YY_REINTERPRET_CAST(Type, Val) ((Type) (Val))
-#  endif
-# endif
-# ifndef YY_NULLPTR
-#  if defined __cplusplus
-#   if 201103L <= __cplusplus
-#    define YY_NULLPTR nullptr
-#   else
-#    define YY_NULLPTR 0
-#   endif
-#  else
-#   define YY_NULLPTR ((void*)0)
-#  endif
-# endif
-
-/* Debug traces.  */
-#ifndef YYDEBUG
-# define YYDEBUG 0
-#endif
-
-namespace yy {
-#line 180 "y.tab.c"
-
-
-
-
-  /// A Bison parser.
-  class parser
-  {
-  public:
-#ifndef YYSTYPE
-    /// Symbol semantic values.
-    typedef int semantic_type;
-#else
-    typedef YYSTYPE semantic_type;
-#endif
-
-    /// Syntax errors thrown from user actions.
-    struct syntax_error : std::runtime_error
-    {
-      syntax_error (const std::string& m)
-        : std::runtime_error (m)
-      {}
-
-      syntax_error (const syntax_error& s)
-        : std::runtime_error (s.what ())
-      {}
-
-      ~syntax_error () YY_NOEXCEPT YY_NOTHROW;
-    };
-
-    /// Tokens.
-    struct token
-    {
-      enum yytokentype
-      {
-        IF = 258,
-        THEN = 259,
-        ELSE = 260,
-        WHILE = 261,
-        BREAK = 262,
-        CONTINUE = 263,
-        RETURN = 264,
-        CONST = 265,
-        INT = 266,
-        VOID = 267,
-        ID = 268,
-        DEC_NUM = 269,
-        OCT_NUM = 270,
-        HEX_NUM = 271,
-        ASSIGN = 272,
-        SEMI = 273,
-        COMMA = 274,
-        LLPAREN = 275,
-        LRPAREN = 276,
-        MLPAREN = 277,
-        MRPAREN = 278,
-        SLPAREN = 279,
-        SRPAREN = 280,
-        NOT = 281,
-        EQ = 282,
-        NEQ = 283,
-        LT = 284,
-        GT = 285,
-        LTE = 286,
-        GTE = 287,
-        PLUS = 288,
-        MINUS = 289,
-        TIMES = 290,
-        OVER = 291,
-        MOD = 292,
-        AND = 293,
-        OR = 294,
-        ERROR = 295
-      };
-    };
-
-    /// (External) token type, as returned by yylex.
-    typedef token::yytokentype token_type;
-
-    /// Symbol type: an internal symbol number.
-    typedef int symbol_number_type;
-
-    /// The symbol type number to denote an empty symbol.
-    enum { empty_symbol = -2 };
-
-    /// Internal symbol number for tokens (subsumed by symbol_number_type).
-    typedef signed char token_number_type;
-
-    /// A complete symbol.
-    ///
-    /// Expects its Base type to provide access to the symbol type
-    /// via type_get ().
-    ///
-    /// Provide access to semantic value.
-    template <typename Base>
-    struct basic_symbol : Base
-    {
-      /// Alias to Base.
-      typedef Base super_type;
-
-      /// Default constructor.
-      basic_symbol ()
-        : value ()
-      {}
-
-#if 201103L <= YY_CPLUSPLUS
-      /// Move constructor.
-      basic_symbol (basic_symbol&& that);
-#endif
-
-      /// Copy constructor.
-      basic_symbol (const basic_symbol& that);
-      /// Constructor for valueless symbols.
-      basic_symbol (typename Base::kind_type t);
-
-      /// Constructor for symbols with semantic value.
-      basic_symbol (typename Base::kind_type t,
-                    YY_RVREF (semantic_type) v);
-
-      /// Destroy the symbol.
-      ~basic_symbol ()
-      {
-        clear ();
-      }
-
-      /// Destroy contents, and record that is empty.
-      void clear ()
-      {
-        Base::clear ();
-      }
-
-      /// Whether empty.
-      bool empty () const YY_NOEXCEPT;
-
-      /// Destructive move, \a s is emptied into this.
-      void move (basic_symbol& s);
-
-      /// The semantic value.
-      semantic_type value;
-
-    private:
-#if YY_CPLUSPLUS < 201103L
-      /// Assignment operator.
-      basic_symbol& operator= (const basic_symbol& that);
-#endif
-    };
-
-    /// Type access provider for token (enum) based symbols.
-    struct by_type
-    {
-      /// Default constructor.
-      by_type ();
-
-#if 201103L <= YY_CPLUSPLUS
-      /// Move constructor.
-      by_type (by_type&& that);
-#endif
-
-      /// Copy constructor.
-      by_type (const by_type& that);
-
-      /// The symbol type as needed by the constructor.
-      typedef token_type kind_type;
-
-      /// Constructor from (external) token numbers.
-      by_type (kind_type t);
-
-      /// Record that this symbol is empty.
-      void clear ();
-
-      /// Steal the symbol type from \a that.
-      void move (by_type& that);
-
-      /// The (internal) type number (corresponding to \a type).
-      /// \a empty when empty.
-      symbol_number_type type_get () const YY_NOEXCEPT;
-
-      /// The symbol type.
-      /// \a empty_symbol when empty.
-      /// An int, not token_number_type, to be able to store empty_symbol.
-      int type;
-    };
-
-    /// "External" symbols: returned by the scanner.
-    struct symbol_type : basic_symbol<by_type>
-    {};
-
-    /// Build a parser object.
-    parser ();
-    virtual ~parser ();
-
-    /// Parse.  An alias for parse ().
-    /// \returns  0 iff parsing succeeded.
-    int operator() ();
-
-    /// Parse.
-    /// \returns  0 iff parsing succeeded.
-    virtual int parse ();
-
-#if YYDEBUG
-    /// The current debugging stream.
-    std::ostream& debug_stream () const YY_ATTRIBUTE_PURE;
-    /// Set the current debugging stream.
-    void set_debug_stream (std::ostream &);
-
-    /// Type for debugging levels.
-    typedef int debug_level_type;
-    /// The current debugging level.
-    debug_level_type debug_level () const YY_ATTRIBUTE_PURE;
-    /// Set the current debugging level.
-    void set_debug_level (debug_level_type l);
-#endif
-
-    /// Report a syntax error.
-    /// \param msg    a description of the syntax error.
-    virtual void error (const std::string& msg);
-
-    /// Report a syntax error.
-    void error (const syntax_error& err);
-
-
-
-  private:
-    /// This class is not copyable.
-    parser (const parser&);
-    parser& operator= (const parser&);
-
-    /// Stored state numbers (used for stacks).
-    typedef unsigned char state_type;
-
-    /// Generate an error message.
-    /// \param yystate   the state where the error occurred.
-    /// \param yyla      the lookahead token.
-    virtual std::string yysyntax_error_ (state_type yystate,
-                                         const symbol_type& yyla) const;
-
-    /// Compute post-reduction state.
-    /// \param yystate   the current state
-    /// \param yysym     the nonterminal to push on the stack
-    static state_type yy_lr_goto_state_ (state_type yystate, int yysym);
-
-    /// Whether the given \c yypact_ value indicates a defaulted state.
-    /// \param yyvalue   the value to check
-    static bool yy_pact_value_is_default_ (int yyvalue);
-
-    /// Whether the given \c yytable_ value indicates a syntax error.
-    /// \param yyvalue   the value to check
-    static bool yy_table_value_is_error_ (int yyvalue);
-
-    static const short yypact_ninf_;
-    static const signed char yytable_ninf_;
-
-    /// Convert a scanner token number \a t to a symbol number.
-    /// In theory \a t should be a token_type, but character literals
-    /// are valid, yet not members of the token_type enum.
-    static token_number_type yytranslate_ (int t);
-
-    // Tables.
-    // YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
-    // STATE-NUM.
-    static const short yypact_[];
-
-    // YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
-    // Performed when YYTABLE does not specify something else to do.  Zero
-    // means the default is an error.
-    static const signed char yydefact_[];
-
-    // YYPGOTO[NTERM-NUM].
-    static const short yypgoto_[];
-
-    // YYDEFGOTO[NTERM-NUM].
-    static const short yydefgoto_[];
-
-    // YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
-    // positive, shift that token.  If negative, reduce the rule whose
-    // number is the opposite.  If YYTABLE_NINF, syntax error.
-    static const unsigned char yytable_[];
-
-    static const short yycheck_[];
-
-    // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
-    // symbol of state STATE-NUM.
-    static const signed char yystos_[];
-
-    // YYR1[YYN] -- Symbol number of symbol that rule YYN derives.
-    static const signed char yyr1_[];
-
-    // YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.
-    static const signed char yyr2_[];
-
-
-
-    /// For a symbol, its name in clear.
-    static const char* const yytname_[];
-#if YYDEBUG
-    // YYRLINE[YYN] -- Source line where rule number YYN was defined.
-    static const short yyrline_[];
-    /// Report on the debug stream that the rule \a r is going to be reduced.
-    virtual void yy_reduce_print_ (int r);
-    /// Print the state stack on the debug stream.
-    virtual void yystack_print_ ();
-
-    /// Debugging level.
-    int yydebug_;
-    /// Debug stream.
-    std::ostream* yycdebug_;
-
-    /// \brief Display a symbol type, value and location.
-    /// \param yyo    The output stream.
-    /// \param yysym  The symbol.
-    template <typename Base>
-    void yy_print_ (std::ostream& yyo, const basic_symbol<Base>& yysym) const;
-#endif
-
-    /// \brief Reclaim the memory associated to a symbol.
-    /// \param yymsg     Why this token is reclaimed.
-    ///                  If null, print nothing.
-    /// \param yysym     The symbol.
-    template <typename Base>
-    void yy_destroy_ (const char* yymsg, basic_symbol<Base>& yysym) const;
-
-  private:
-    /// Type access provider for state based symbols.
-    struct by_state
-    {
-      /// Default constructor.
-      by_state () YY_NOEXCEPT;
-
-      /// The symbol type as needed by the constructor.
-      typedef state_type kind_type;
-
-      /// Constructor.
-      by_state (kind_type s) YY_NOEXCEPT;
-
-      /// Copy constructor.
-      by_state (const by_state& that) YY_NOEXCEPT;
-
-      /// Record that this symbol is empty.
-      void clear () YY_NOEXCEPT;
-
-      /// Steal the symbol type from \a that.
-      void move (by_state& that);
-
-      /// The (internal) type number (corresponding to \a state).
-      /// \a empty_symbol when empty.
-      symbol_number_type type_get () const YY_NOEXCEPT;
-
-      /// The state number used to denote an empty symbol.
-      /// We use the initial state, as it does not have a value.
-      enum { empty_state = 0 };
-
-      /// The state.
-      /// \a empty when empty.
-      state_type state;
-    };
-
-    /// "Internal" symbol: element of the stack.
-    struct stack_symbol_type : basic_symbol<by_state>
-    {
-      /// Superclass.
-      typedef basic_symbol<by_state> super_type;
-      /// Construct an empty symbol.
-      stack_symbol_type ();
-      /// Move or copy construction.
-      stack_symbol_type (YY_RVREF (stack_symbol_type) that);
-      /// Steal the contents from \a sym to build this.
-      stack_symbol_type (state_type s, YY_MOVE_REF (symbol_type) sym);
-#if YY_CPLUSPLUS < 201103L
-      /// Assignment, needed by push_back by some old implementations.
-      /// Moves the contents of that.
-      stack_symbol_type& operator= (stack_symbol_type& that);
-
-      /// Assignment, needed by push_back by other implementations.
-      /// Needed by some other old implementations.
-      stack_symbol_type& operator= (const stack_symbol_type& that);
-#endif
-    };
-
-    /// A stack with random access from its top.
-    template <typename T, typename S = std::vector<T> >
-    class stack
-    {
-    public:
-      // Hide our reversed order.
-      typedef typename S::reverse_iterator iterator;
-      typedef typename S::const_reverse_iterator const_iterator;
-      typedef typename S::size_type size_type;
-      typedef typename std::ptrdiff_t index_type;
-
-      stack (size_type n = 200)
-        : seq_ (n)
-      {}
-
-      /// Random access.
-      ///
-      /// Index 0 returns the topmost element.
-      const T&
-      operator[] (index_type i) const
-      {
-        return seq_[size_type (size () - 1 - i)];
-      }
-
-      /// Random access.
-      ///
-      /// Index 0 returns the topmost element.
-      T&
-      operator[] (index_type i)
-      {
-        return seq_[size_type (size () - 1 - i)];
-      }
-
-      /// Steal the contents of \a t.
-      ///
-      /// Close to move-semantics.
-      void
-      push (YY_MOVE_REF (T) t)
-      {
-        seq_.push_back (T ());
-        operator[] (0).move (t);
-      }
-
-      /// Pop elements from the stack.
-      void
-      pop (std::ptrdiff_t n = 1) YY_NOEXCEPT
-      {
-        for (; 0 < n; --n)
-          seq_.pop_back ();
-      }
-
-      /// Pop all elements from the stack.
-      void
-      clear () YY_NOEXCEPT
-      {
-        seq_.clear ();
-      }
-
-      /// Number of elements on the stack.
-      index_type
-      size () const YY_NOEXCEPT
-      {
-        return index_type (seq_.size ());
-      }
-
-      std::ptrdiff_t
-      ssize () const YY_NOEXCEPT
-      {
-        return std::ptrdiff_t (size ());
-      }
-
-      /// Iterator on top of the stack (going downwards).
-      const_iterator
-      begin () const YY_NOEXCEPT
-      {
-        return seq_.rbegin ();
-      }
-
-      /// Bottom of the stack.
-      const_iterator
-      end () const YY_NOEXCEPT
-      {
-        return seq_.rend ();
-      }
-
-      /// Present a slice of the top of a stack.
-      class slice
-      {
-      public:
-        slice (const stack& stack, index_type range)
-          : stack_ (stack)
-          , range_ (range)
-        {}
-
-        const T&
-        operator[] (index_type i) const
-        {
-          return stack_[range_ - i];
-        }
-
-      private:
-        const stack& stack_;
-        index_type range_;
-      };
-
-    private:
-      stack (const stack&);
-      stack& operator= (const stack&);
-      /// The wrapped container.
-      S seq_;
-    };
-
-
-    /// Stack type.
-    typedef stack<stack_symbol_type> stack_type;
-
-    /// The stack.
-    stack_type yystack_;
-
-    /// Push a new state on the stack.
-    /// \param m    a debug message to display
-    ///             if null, no trace is output.
-    /// \param sym  the symbol
-    /// \warning the contents of \a s.value is stolen.
-    void yypush_ (const char* m, YY_MOVE_REF (stack_symbol_type) sym);
-
-    /// Push a new look ahead token on the state on the stack.
-    /// \param m    a debug message to display
-    ///             if null, no trace is output.
-    /// \param s    the state
-    /// \param sym  the symbol (for its value and location).
-    /// \warning the contents of \a sym.value is stolen.
-    void yypush_ (const char* m, state_type s, YY_MOVE_REF (symbol_type) sym);
-
-    /// Pop \a n symbols from the stack.
-    void yypop_ (int n = 1);
-
-    /// Some specific tokens.
-    static const token_number_type yy_error_token_ = 1;
-    static const token_number_type yy_undef_token_ = 2;
-
-    /// Constants.
-    enum
-    {
-      yyeof_ = 0,
-      yylast_ = 308,     ///< Last index in yytable_.
-      yynnts_ = 47,  ///< Number of nonterminal symbols.
-      yyfinal_ = 16, ///< Termination state number.
-      yyntokens_ = 41  ///< Number of tokens.
-    };
-
-
-  };
-
-
-} // yy
-#line 714 "y.tab.c"
-
-
-
-
-
+#include "source.tab.hpp"
 
 
 
@@ -789,7 +122,7 @@ namespace yy {
 #define YYRECOVERING()  (!!yyerrstatus_)
 
 namespace yy {
-#line 793 "y.tab.c"
+#line 126 "source.tab.cpp"
 
 
   /// Build a parser object.
@@ -1224,864 +557,864 @@ namespace yy {
           switch (yyn)
             {
   case 2:
-#line 25 "jason.ypp"
+#line 25 "source.y"
                        {root = std::move(yystack_[0].value); }
-#line 1230 "y.tab.c"
+#line 563 "source.tab.cpp"
     break;
 
   case 3:
-#line 27 "jason.ypp"
+#line 27 "source.y"
                    { 
     ASTPtrList units;
     units.push_back(std::move(yystack_[0].value));
     yylhs.value = std::make_shared<CompUnitAST>(std::move(units));  }
-#line 1239 "y.tab.c"
+#line 572 "source.tab.cpp"
     break;
 
   case 4:
-#line 31 "jason.ypp"
+#line 31 "source.y"
                       {
     ASTPtrList units;
     units.push_back(std::move(yystack_[0].value));
     yylhs.value = std::make_shared<CompUnitAST>(std::move(units));  }
-#line 1248 "y.tab.c"
+#line 581 "source.tab.cpp"
     break;
 
   case 5:
-#line 35 "jason.ypp"
+#line 35 "source.y"
                             {
     auto p_CompUnitAST = std::dynamic_pointer_cast<CompUnitAST>(yystack_[1].value);
     p_CompUnitAST->_units.push_back(std::move(yystack_[0].value));
     yylhs.value = p_CompUnitAST;
             }
-#line 1258 "y.tab.c"
+#line 591 "source.tab.cpp"
     break;
 
   case 6:
-#line 40 "jason.ypp"
+#line 40 "source.y"
                                {
     auto p_CompUnitAST = std::dynamic_pointer_cast<CompUnitAST>(yystack_[1].value);
     p_CompUnitAST->_units.push_back(std::move(yystack_[0].value));
     yylhs.value = p_CompUnitAST;
             }
-#line 1268 "y.tab.c"
+#line 601 "source.tab.cpp"
     break;
 
   case 7:
-#line 47 "jason.ypp"
+#line 47 "source.y"
                         {yylhs.value = yystack_[0].value;}
-#line 1274 "y.tab.c"
+#line 607 "source.tab.cpp"
     break;
 
   case 8:
-#line 48 "jason.ypp"
+#line 48 "source.y"
                       {yylhs.value = yystack_[0].value;}
-#line 1280 "y.tab.c"
+#line 613 "source.tab.cpp"
     break;
 
   case 9:
-#line 51 "jason.ypp"
+#line 51 "source.y"
                                           { 
     yylhs.value =  std::make_shared<ConstDeclAST>(INT, std::move(yystack_[1].value));}
-#line 1287 "y.tab.c"
+#line 620 "source.tab.cpp"
     break;
 
   case 10:
-#line 55 "jason.ypp"
+#line 55 "source.y"
                         {
     ASTPtrList const_defs;
     const_defs.push_back(std::move(yystack_[0].value));
     yylhs.value = std::make_shared<ConstDefListAST>(std::move(const_defs));
 }
-#line 1297 "y.tab.c"
+#line 630 "source.tab.cpp"
     break;
 
   case 11:
-#line 60 "jason.ypp"
+#line 60 "source.y"
                                           {
     auto p_ConstDefListAST = std::dynamic_pointer_cast<ConstDefListAST>(yystack_[2].value);
     p_ConstDefListAST->const_defs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_ConstDefListAST;
 }
-#line 1307 "y.tab.c"
+#line 640 "source.tab.cpp"
     break;
 
   case 12:
-#line 67 "jason.ypp"
+#line 67 "source.y"
                                     {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value);
     yylhs.value = std::make_shared<ConstDefAST>(p_IdAST->id(),nullptr, std::move(yystack_[0].value));
 }
-#line 1316 "y.tab.c"
+#line 649 "source.tab.cpp"
     break;
 
   case 13:
-#line 71 "jason.ypp"
+#line 71 "source.y"
                                               {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
     yylhs.value = std::make_shared<ConstDefAST>(p_IdAST->id(),std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
-#line 1325 "y.tab.c"
+#line 658 "source.tab.cpp"
     break;
 
   case 14:
-#line 77 "jason.ypp"
+#line 77 "source.y"
                                   {
     ASTPtrList const_exprs;
     const_exprs.push_back(std::move(yystack_[1].value));
     yylhs.value = std::make_shared<DimensionAST>(std::move(const_exprs));
 }
-#line 1335 "y.tab.c"
+#line 668 "source.tab.cpp"
     break;
 
   case 15:
-#line 82 "jason.ypp"
+#line 82 "source.y"
                                              {
     auto p_DimensionAST = std::dynamic_pointer_cast<DimensionAST>(yystack_[3].value);
     p_DimensionAST->dims().push_back(std::move(yystack_[1].value));
     yylhs.value = p_DimensionAST;            
 }
-#line 1345 "y.tab.c"
+#line 678 "source.tab.cpp"
     break;
 
   case 16:
-#line 89 "jason.ypp"
+#line 89 "source.y"
                   { yylhs.value = yystack_[0].value; }
-#line 1351 "y.tab.c"
+#line 684 "source.tab.cpp"
     break;
 
   case 17:
-#line 90 "jason.ypp"
+#line 90 "source.y"
                                 { yylhs.value = yystack_[0].value; }
-#line 1357 "y.tab.c"
+#line 690 "source.tab.cpp"
     break;
 
   case 18:
-#line 93 "jason.ypp"
+#line 93 "source.y"
                           {
     yylhs.value = std::make_shared<ConstInitValArrayAST>(nullptr);
 }
-#line 1365 "y.tab.c"
+#line 698 "source.tab.cpp"
     break;
 
   case 19:
-#line 96 "jason.ypp"
+#line 96 "source.y"
                                                {
     yylhs.value = std::make_shared<ConstInitValArrayAST>(std::move(yystack_[1].value));
 }
-#line 1373 "y.tab.c"
+#line 706 "source.tab.cpp"
     break;
 
   case 21:
-#line 104 "jason.ypp"
+#line 104 "source.y"
                                 {
     ASTPtrList const_exprs;
     const_exprs.push_back(std::move(yystack_[0].value));
     yylhs.value = std::make_shared<ConstInitValAST>(std::move(const_exprs));
 }
-#line 1383 "y.tab.c"
+#line 716 "source.tab.cpp"
     break;
 
   case 22:
-#line 109 "jason.ypp"
+#line 109 "source.y"
                                                   {
     auto p_ConstInitValList = std::dynamic_pointer_cast<ConstInitValAST>(yystack_[2].value);
     p_ConstInitValList->const_exprs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_ConstInitValList;
 }
-#line 1393 "y.tab.c"
+#line 726 "source.tab.cpp"
     break;
 
   case 23:
-#line 116 "jason.ypp"
+#line 116 "source.y"
                                   {
     yylhs.value =  std::make_shared<VarDeclAST>(INT, std::move(yystack_[1].value));
 }
-#line 1401 "y.tab.c"
+#line 734 "source.tab.cpp"
     break;
 
   case 24:
-#line 121 "jason.ypp"
+#line 121 "source.y"
                      {
     ASTPtrList var_defs;
     var_defs.push_back(std::move(yystack_[0].value));
     yylhs.value = std::make_shared<VarDefListAST>(std::move(var_defs));
 }
-#line 1411 "y.tab.c"
+#line 744 "source.tab.cpp"
     break;
 
   case 25:
-#line 126 "jason.ypp"
+#line 126 "source.y"
                                       {
     auto p_VarDefList = std::dynamic_pointer_cast<VarDefListAST>(yystack_[2].value);
     p_VarDefList->var_defs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_VarDefList;
 }
-#line 1421 "y.tab.c"
+#line 754 "source.tab.cpp"
     break;
 
   case 26:
-#line 133 "jason.ypp"
+#line 133 "source.y"
                     {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[0].value);
     yylhs.value = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, nullptr);
 }
-#line 1430 "y.tab.c"
+#line 763 "source.tab.cpp"
     break;
 
   case 27:
-#line 137 "jason.ypp"
+#line 137 "source.y"
                                {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value);
     yylhs.value = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, std::move(yystack_[0].value));
 }
-#line 1439 "y.tab.c"
+#line 772 "source.tab.cpp"
     break;
 
   case 28:
-#line 141 "jason.ypp"
+#line 141 "source.y"
                               {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[1].value);
     yylhs.value = std::make_shared<VarDefAST>(p_IdAST->id(), std::move(yystack_[0].value), nullptr);
 }
-#line 1448 "y.tab.c"
+#line 781 "source.tab.cpp"
     break;
 
   case 29:
-#line 145 "jason.ypp"
+#line 145 "source.y"
                                          {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
     yylhs.value = std::make_shared<VarDefAST>(p_IdAST->id(), std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
-#line 1457 "y.tab.c"
+#line 790 "source.tab.cpp"
     break;
 
   case 30:
-#line 151 "jason.ypp"
+#line 151 "source.y"
                   { yylhs.value = yystack_[0].value; }
-#line 1463 "y.tab.c"
+#line 796 "source.tab.cpp"
     break;
 
   case 31:
-#line 152 "jason.ypp"
+#line 152 "source.y"
                            { yylhs.value = yystack_[0].value; }
-#line 1469 "y.tab.c"
+#line 802 "source.tab.cpp"
     break;
 
   case 32:
-#line 155 "jason.ypp"
+#line 155 "source.y"
                      {
     yylhs.value = std::make_shared<InitValArrayAST>(nullptr);
 }
-#line 1477 "y.tab.c"
+#line 810 "source.tab.cpp"
     break;
 
   case 33:
-#line 158 "jason.ypp"
+#line 158 "source.y"
                                           {
     yylhs.value = std::make_shared<InitValArrayAST>(std::move(yystack_[1].value));
 }
-#line 1485 "y.tab.c"
+#line 818 "source.tab.cpp"
     break;
 
   case 34:
-#line 163 "jason.ypp"
+#line 163 "source.y"
                       {
     ASTPtrList exprs;
     exprs.push_back(std::move(yystack_[0].value));
     yylhs.value = std::make_shared<InitValAST>(std::move(exprs));
 }
-#line 1495 "y.tab.c"
+#line 828 "source.tab.cpp"
     break;
 
   case 35:
-#line 168 "jason.ypp"
+#line 168 "source.y"
                                         {
     auto p_InitValList = std::dynamic_pointer_cast<InitValAST>(yystack_[2].value);
     p_InitValList->exprs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_InitValList;
 }
-#line 1505 "y.tab.c"
+#line 838 "source.tab.cpp"
     break;
 
   case 36:
-#line 175 "jason.ypp"
+#line 175 "source.y"
                                                {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
     yylhs.value = std::make_shared<FuncDefAST>(VOID, p_IdAST->id(), nullptr, std::move(yystack_[0].value));
 }
-#line 1514 "y.tab.c"
+#line 847 "source.tab.cpp"
     break;
 
   case 37:
-#line 179 "jason.ypp"
+#line 179 "source.y"
                                                            {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[4].value);
     yylhs.value = std::make_shared<FuncDefAST>(VOID, p_IdAST->id(), std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
-#line 1523 "y.tab.c"
+#line 856 "source.tab.cpp"
     break;
 
   case 38:
-#line 183 "jason.ypp"
+#line 183 "source.y"
                                               {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
     yylhs.value = std::make_shared<FuncDefAST>(INT, p_IdAST->id(), nullptr, std::move(yystack_[0].value));
 }
-#line 1532 "y.tab.c"
+#line 865 "source.tab.cpp"
     break;
 
   case 39:
-#line 187 "jason.ypp"
+#line 187 "source.y"
                                                           {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[4].value);
     yylhs.value = std::make_shared<FuncDefAST>(INT, p_IdAST->id(), std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
-#line 1541 "y.tab.c"
+#line 874 "source.tab.cpp"
     break;
 
   case 40:
-#line 193 "jason.ypp"
+#line 193 "source.y"
                          {
     ASTPtrList param_list;
     param_list.push_back(std::move(yystack_[0].value));
     yylhs.value = std::make_shared<FuncFParamsAST>(std::move(param_list));
 }
-#line 1551 "y.tab.c"
+#line 884 "source.tab.cpp"
     break;
 
   case 41:
-#line 198 "jason.ypp"
+#line 198 "source.y"
                                            {
     auto p_FuncFParams = std::dynamic_pointer_cast<FuncFParamsAST>(yystack_[2].value);
     p_FuncFParams->param_list().push_back(std::move(yystack_[0].value));
     yylhs.value = p_FuncFParams;
 }
-#line 1561 "y.tab.c"
+#line 894 "source.tab.cpp"
     break;
 
   case 42:
-#line 206 "jason.ypp"
+#line 206 "source.y"
                             { yylhs.value = yystack_[0].value; }
-#line 1567 "y.tab.c"
+#line 900 "source.tab.cpp"
     break;
 
   case 43:
-#line 207 "jason.ypp"
+#line 207 "source.y"
                               { yylhs.value = yystack_[0].value; }
-#line 1573 "y.tab.c"
+#line 906 "source.tab.cpp"
     break;
 
   case 44:
-#line 210 "jason.ypp"
+#line 210 "source.y"
                           {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[0].value);
     yylhs.value = std::make_shared<FuncFParamVarAST>(INT, p_IdAST->id());
 }
-#line 1582 "y.tab.c"
+#line 915 "source.tab.cpp"
     break;
 
   case 45:
-#line 216 "jason.ypp"
+#line 216 "source.y"
                                             {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value);
     yylhs.value = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST->id(), nullptr);
 }
-#line 1591 "y.tab.c"
+#line 924 "source.tab.cpp"
     break;
 
   case 46:
-#line 220 "jason.ypp"
+#line 220 "source.y"
                                                   {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
     yylhs.value = std::make_shared<FuncFParamArrayAST>(INT, p_IdAST->id(), std::move(yystack_[0].value));
 }
-#line 1600 "y.tab.c"
+#line 933 "source.tab.cpp"
     break;
 
   case 47:
-#line 226 "jason.ypp"
+#line 226 "source.y"
                     {
     yylhs.value = std::make_shared<BlockAST>(nullptr);
 }
-#line 1608 "y.tab.c"
+#line 941 "source.tab.cpp"
     break;
 
   case 48:
-#line 229 "jason.ypp"
+#line 229 "source.y"
                                          {
     yylhs.value = std::make_shared<BlockAST>(std::move(yystack_[1].value));
 }
-#line 1616 "y.tab.c"
+#line 949 "source.tab.cpp"
     break;
 
   case 49:
-#line 234 "jason.ypp"
+#line 234 "source.y"
                         {
     ASTPtrList items;
     items.push_back(std::move(yystack_[0].value));
     yylhs.value = std::make_shared<BlockItemsAST>(std::move(items));
 }
-#line 1626 "y.tab.c"
+#line 959 "source.tab.cpp"
     break;
 
   case 50:
-#line 239 "jason.ypp"
+#line 239 "source.y"
                                    {
     auto p_BlockItems = std::dynamic_pointer_cast<BlockItemsAST>(yystack_[1].value);
     p_BlockItems->items().push_back(std::move(yystack_[0].value));
     yylhs.value = p_BlockItems;
 }
-#line 1636 "y.tab.c"
+#line 969 "source.tab.cpp"
     break;
 
   case 51:
-#line 246 "jason.ypp"
+#line 246 "source.y"
                    {
     yylhs.value = yystack_[0].value;
 }
-#line 1644 "y.tab.c"
+#line 977 "source.tab.cpp"
     break;
 
   case 52:
-#line 249 "jason.ypp"
+#line 249 "source.y"
                    {
     yylhs.value = yystack_[0].value;
 }
-#line 1652 "y.tab.c"
+#line 985 "source.tab.cpp"
     break;
 
   case 53:
-#line 254 "jason.ypp"
+#line 254 "source.y"
                     { yylhs.value = yystack_[0].value; }
-#line 1658 "y.tab.c"
+#line 991 "source.tab.cpp"
     break;
 
   case 54:
-#line 255 "jason.ypp"
+#line 255 "source.y"
                           { yylhs.value = yystack_[0].value; }
-#line 1664 "y.tab.c"
+#line 997 "source.tab.cpp"
     break;
 
   case 55:
-#line 256 "jason.ypp"
+#line 256 "source.y"
                        { yylhs.value = yystack_[0].value; }
-#line 1670 "y.tab.c"
+#line 1003 "source.tab.cpp"
     break;
 
   case 56:
-#line 257 "jason.ypp"
+#line 257 "source.y"
                       { yylhs.value = yystack_[0].value; }
-#line 1676 "y.tab.c"
+#line 1009 "source.tab.cpp"
     break;
 
   case 57:
-#line 258 "jason.ypp"
+#line 258 "source.y"
                          { yylhs.value = yystack_[0].value; }
-#line 1682 "y.tab.c"
+#line 1015 "source.tab.cpp"
     break;
 
   case 58:
-#line 259 "jason.ypp"
+#line 259 "source.y"
                         { yylhs.value = yystack_[0].value; }
-#line 1688 "y.tab.c"
+#line 1021 "source.tab.cpp"
     break;
 
   case 59:
-#line 260 "jason.ypp"
+#line 260 "source.y"
                           { yylhs.value = yystack_[0].value; }
-#line 1694 "y.tab.c"
+#line 1027 "source.tab.cpp"
     break;
 
   case 60:
-#line 263 "jason.ypp"
+#line 263 "source.y"
                                {
     yylhs.value = std::make_shared<AssignAST>(std::move(yystack_[3].value), std::move(yystack_[1].value));
 }
-#line 1702 "y.tab.c"
+#line 1035 "source.tab.cpp"
     break;
 
   case 61:
-#line 268 "jason.ypp"
+#line 268 "source.y"
                    {
     yylhs.value = std::make_shared<ExpAST>(nullptr);
 }
-#line 1710 "y.tab.c"
+#line 1043 "source.tab.cpp"
     break;
 
   case 62:
-#line 271 "jason.ypp"
+#line 271 "source.y"
                        {
     yylhs.value = std::make_shared<ExpAST>(std::move(yystack_[1].value));
 }
-#line 1718 "y.tab.c"
+#line 1051 "source.tab.cpp"
     break;
 
   case 63:
-#line 276 "jason.ypp"
+#line 276 "source.y"
                                            {
     yylhs.value = std::make_shared<IfAST>(std::move(yystack_[2].value), std::move(yystack_[0].value), nullptr);
 }
-#line 1726 "y.tab.c"
+#line 1059 "source.tab.cpp"
     break;
 
   case 64:
-#line 279 "jason.ypp"
+#line 279 "source.y"
                                                      {
     yylhs.value = std::make_shared<IfAST>(std::move(yystack_[4].value), std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
-#line 1734 "y.tab.c"
+#line 1067 "source.tab.cpp"
     break;
 
   case 65:
-#line 284 "jason.ypp"
+#line 284 "source.y"
                                               {
     yylhs.value = std::make_shared<WhileAST>(std::move(yystack_[2].value), std::move(yystack_[0].value));
 }
-#line 1742 "y.tab.c"
+#line 1075 "source.tab.cpp"
     break;
 
   case 66:
-#line 289 "jason.ypp"
+#line 289 "source.y"
                          {
     yylhs.value = std::make_shared<CondAST>(BREAK);
 }
-#line 1750 "y.tab.c"
+#line 1083 "source.tab.cpp"
     break;
 
   case 67:
-#line 292 "jason.ypp"
+#line 292 "source.y"
                             {
     yylhs.value = std::make_shared<CondAST>(CONTINUE);
 }
-#line 1758 "y.tab.c"
+#line 1091 "source.tab.cpp"
     break;
 
   case 68:
-#line 297 "jason.ypp"
+#line 297 "source.y"
                           {
     yylhs.value = std::make_shared<ReturnAST>(nullptr);
 }
-#line 1766 "y.tab.c"
+#line 1099 "source.tab.cpp"
     break;
 
   case 69:
-#line 300 "jason.ypp"
+#line 300 "source.y"
                               {
     yylhs.value = std::make_shared<ReturnAST>(std::move(yystack_[2].value));
 }
-#line 1774 "y.tab.c"
+#line 1107 "source.tab.cpp"
     break;
 
   case 70:
-#line 305 "jason.ypp"
+#line 305 "source.y"
                      { yylhs.value = yystack_[0].value; }
-#line 1780 "y.tab.c"
+#line 1113 "source.tab.cpp"
     break;
 
   case 71:
-#line 308 "jason.ypp"
+#line 308 "source.y"
                      { yylhs.value = yystack_[0].value; }
-#line 1786 "y.tab.c"
+#line 1119 "source.tab.cpp"
     break;
 
   case 72:
-#line 311 "jason.ypp"
+#line 311 "source.y"
                     { yylhs.value = yystack_[0].value; }
-#line 1792 "y.tab.c"
+#line 1125 "source.tab.cpp"
     break;
 
   case 73:
-#line 312 "jason.ypp"
+#line 312 "source.y"
                               {
                 auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[1].value); 
                 yylhs.value = std::make_shared<ArrayAST>(p_IdAST->id(), std::move(yystack_[0].value));
             }
-#line 1801 "y.tab.c"
+#line 1134 "source.tab.cpp"
     break;
 
   case 74:
-#line 318 "jason.ypp"
+#line 318 "source.y"
                                   { yylhs.value = yystack_[1].value; }
-#line 1807 "y.tab.c"
+#line 1140 "source.tab.cpp"
     break;
 
   case 75:
-#line 319 "jason.ypp"
+#line 319 "source.y"
                    { yylhs.value = yystack_[0].value; }
-#line 1813 "y.tab.c"
+#line 1146 "source.tab.cpp"
     break;
 
   case 76:
-#line 320 "jason.ypp"
+#line 320 "source.y"
                       {
                 yylhs.value = std::make_shared<IntAST>(atoi(yytext));
                 #ifdef DEBUG
                     printf("%d\n", atoi(yytext));
                 #endif 
             }
-#line 1824 "y.tab.c"
+#line 1157 "source.tab.cpp"
     break;
 
   case 77:
-#line 326 "jason.ypp"
+#line 326 "source.y"
                       {
                 yylhs.value = std::make_shared<IntAST>(strtol(yytext, NULL, 8));
                 #ifdef DEBUG
                     printf("%d\n", strtol(yytext, NULL, 8));
                 #endif
             }
-#line 1835 "y.tab.c"
+#line 1168 "source.tab.cpp"
     break;
 
   case 78:
-#line 332 "jason.ypp"
+#line 332 "source.y"
                       {
                 yylhs.value = std::make_shared<IntAST>(strtol(yytext, NULL, 16));
                 #ifdef DEBUG
                     printf("%d\n", strtol(yytext, NULL, 16));
                 #endif
             }
-#line 1846 "y.tab.c"
+#line 1179 "source.tab.cpp"
     break;
 
   case 79:
-#line 340 "jason.ypp"
+#line 340 "source.y"
                          { yylhs.value = yystack_[0].value; }
-#line 1852 "y.tab.c"
+#line 1185 "source.tab.cpp"
     break;
 
   case 80:
-#line 341 "jason.ypp"
+#line 341 "source.y"
                           { yylhs.value = yystack_[0].value; }
-#line 1858 "y.tab.c"
+#line 1191 "source.tab.cpp"
     break;
 
   case 81:
-#line 342 "jason.ypp"
+#line 342 "source.y"
                             {
                 yylhs.value = std::make_shared<UnaryAST>(PLUS, std::move(yystack_[0].value));
             }
-#line 1866 "y.tab.c"
+#line 1199 "source.tab.cpp"
     break;
 
   case 82:
-#line 345 "jason.ypp"
+#line 345 "source.y"
                              {
                 yylhs.value = std::make_shared<UnaryAST>(MINUS, std::move(yystack_[0].value));
             }
-#line 1874 "y.tab.c"
+#line 1207 "source.tab.cpp"
     break;
 
   case 83:
-#line 348 "jason.ypp"
+#line 348 "source.y"
                            {
                 yylhs.value = std::make_shared<UnaryAST>(NOT, std::move(yystack_[0].value));
             }
-#line 1882 "y.tab.c"
+#line 1215 "source.tab.cpp"
     break;
 
   case 84:
-#line 353 "jason.ypp"
+#line 353 "source.y"
                                     {
                 auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value);
                 yylhs.value = std::make_shared<FuncCallAST>(p_IdAST->id(), nullptr); 
             }
-#line 1891 "y.tab.c"
+#line 1224 "source.tab.cpp"
     break;
 
   case 85:
-#line 357 "jason.ypp"
+#line 357 "source.y"
                                                 {
                 auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value);
                 yylhs.value = std::make_shared<FuncCallAST>(p_IdAST->id(), std::move(yystack_[1].value)); 
             }
-#line 1900 "y.tab.c"
+#line 1233 "source.tab.cpp"
     break;
 
   case 86:
-#line 363 "jason.ypp"
+#line 363 "source.y"
                   {
     ASTPtrList exprs;
     exprs.push_back(std::move(yystack_[0].value));
     yylhs.value = std::make_shared<FuncRParamsAST>(std::move(exprs));
 }
-#line 1910 "y.tab.c"
+#line 1243 "source.tab.cpp"
     break;
 
   case 87:
-#line 368 "jason.ypp"
+#line 368 "source.y"
                                     {
     auto p_FuncRParams = std::dynamic_pointer_cast<FuncRParamsAST>(yystack_[2].value);
     p_FuncRParams->exprs().push_back(std::move(yystack_[0].value));
     yylhs.value = p_FuncRParams;
 }
-#line 1920 "y.tab.c"
+#line 1253 "source.tab.cpp"
     break;
 
   case 88:
-#line 376 "jason.ypp"
+#line 376 "source.y"
                        { yylhs.value = yystack_[0].value; }
-#line 1926 "y.tab.c"
+#line 1259 "source.tab.cpp"
     break;
 
   case 89:
-#line 377 "jason.ypp"
+#line 377 "source.y"
                                     {
                 yylhs.value = std::make_shared<BinaryAST>(TIMES,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 1935 "y.tab.c"
+#line 1268 "source.tab.cpp"
     break;
 
   case 90:
-#line 381 "jason.ypp"
+#line 381 "source.y"
                                    {
                 yylhs.value = std::make_shared<BinaryAST>(OVER,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 1944 "y.tab.c"
+#line 1277 "source.tab.cpp"
     break;
 
   case 91:
-#line 385 "jason.ypp"
+#line 385 "source.y"
                                   {
                 yylhs.value = std::make_shared<BinaryAST>(MOD,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 1953 "y.tab.c"
+#line 1286 "source.tab.cpp"
     break;
 
   case 92:
-#line 391 "jason.ypp"
+#line 391 "source.y"
                      { yylhs.value = yystack_[0].value }
-#line 1959 "y.tab.c"
+#line 1292 "source.tab.cpp"
     break;
 
   case 93:
-#line 392 "jason.ypp"
+#line 392 "source.y"
                                  {
                 yylhs.value = std::make_shared<BinaryAST>(PLUS,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 1968 "y.tab.c"
+#line 1301 "source.tab.cpp"
     break;
 
   case 94:
-#line 396 "jason.ypp"
+#line 396 "source.y"
                                   {
                 yylhs.value = std::make_shared<BinaryAST>(MINUS,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 1977 "y.tab.c"
+#line 1310 "source.tab.cpp"
     break;
 
   case 95:
-#line 402 "jason.ypp"
+#line 402 "source.y"
                      { yylhs.value = yystack_[0].value; }
-#line 1983 "y.tab.c"
+#line 1316 "source.tab.cpp"
     break;
 
   case 96:
-#line 403 "jason.ypp"
+#line 403 "source.y"
                                {
                 yylhs.value = std::make_shared<BinaryAST>(LT,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 1992 "y.tab.c"
+#line 1325 "source.tab.cpp"
     break;
 
   case 97:
-#line 407 "jason.ypp"
+#line 407 "source.y"
                                {
                 yylhs.value = std::make_shared<BinaryAST>(GT,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 2001 "y.tab.c"
+#line 1334 "source.tab.cpp"
     break;
 
   case 98:
-#line 411 "jason.ypp"
+#line 411 "source.y"
                                 {
                 yylhs.value = std::make_shared<BinaryAST>(LTE,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 2010 "y.tab.c"
+#line 1343 "source.tab.cpp"
     break;
 
   case 99:
-#line 415 "jason.ypp"
+#line 415 "source.y"
                                 {
                 yylhs.value = std::make_shared<BinaryAST>(GTE,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 2019 "y.tab.c"
+#line 1352 "source.tab.cpp"
     break;
 
   case 100:
-#line 421 "jason.ypp"
+#line 421 "source.y"
                      { yylhs.value = yystack_[0].value; }
-#line 2025 "y.tab.c"
+#line 1358 "source.tab.cpp"
     break;
 
   case 101:
-#line 422 "jason.ypp"
+#line 422 "source.y"
                               {
                 yylhs.value = std::make_shared<BinaryAST>(EQ,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 2034 "y.tab.c"
+#line 1367 "source.tab.cpp"
     break;
 
   case 102:
-#line 426 "jason.ypp"
+#line 426 "source.y"
                                {
                 yylhs.value = std::make_shared<BinaryAST>(NEQ,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 2043 "y.tab.c"
+#line 1376 "source.tab.cpp"
     break;
 
   case 103:
-#line 432 "jason.ypp"
+#line 432 "source.y"
                     { yylhs.value = yystack_[0].value; }
-#line 2049 "y.tab.c"
+#line 1382 "source.tab.cpp"
     break;
 
   case 104:
-#line 433 "jason.ypp"
+#line 433 "source.y"
                                 {
                 yylhs.value = std::make_shared<BinaryAST>(AND,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 2058 "y.tab.c"
+#line 1391 "source.tab.cpp"
     break;
 
   case 105:
-#line 438 "jason.ypp"
+#line 438 "source.y"
                       { yylhs.value = yystack_[0].value; }
-#line 2064 "y.tab.c"
+#line 1397 "source.tab.cpp"
     break;
 
   case 106:
-#line 439 "jason.ypp"
+#line 439 "source.y"
                                 {
                 yylhs.value = std::make_shared<BinaryAST>(OR,
                 std::move(yystack_[2].value), std::move(yystack_[0].value));
             }
-#line 2073 "y.tab.c"
+#line 1406 "source.tab.cpp"
     break;
 
   case 107:
-#line 444 "jason.ypp"
+#line 444 "source.y"
                 {
     yylhs.value = std::make_unique<IdAST>(yytext);
 }
-#line 2081 "y.tab.c"
+#line 1414 "source.tab.cpp"
     break;
 
 
-#line 2085 "y.tab.c"
+#line 1418 "source.tab.cpp"
 
             default:
               break;
@@ -2459,7 +1792,7 @@ namespace yy {
   };
 
 
-
+#if YYDEBUG
   // YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
   // First, the terminals, then, starting at \a yyntokens_, nonterminals.
   const char*
@@ -2481,7 +1814,7 @@ namespace yy {
   "LAndExp", "LOrExp", "IDENT", YY_NULLPTR
   };
 
-#if YYDEBUG
+
   const short
   parser::yyrline_[] =
   {
@@ -2578,7 +1911,7 @@ namespace yy {
   }
 
 } // yy
-#line 2582 "y.tab.c"
+#line 1915 "source.tab.cpp"
 
-#line 449 "jason.ypp"
+#line 449 "source.y"
 

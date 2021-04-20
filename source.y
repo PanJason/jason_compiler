@@ -3,15 +3,28 @@
 /*Grammer Analysis for Jason Compiler               */
 /*Yueyang (Jason) Pan                               */
 /****************************************************/
-%{
+%define api.token.constructor
+%define api.value.type variant
+%define parse.assert
+%define parse.trace
+%define parse.error verbose
+%define api.token.prefix {TOK_}
+
+%code{
     #include "global.h"
+    #include "driver.h"
+    #include <string>
     #include <algorithm>
     #include <stdlib.h>
     #define YYSTYPE ASTPtr
     #define DEBUG
-    static ASTPtr root;
-%}
-
+}
+%code requires {
+    class driver;
+}
+%language "c++"
+%locations
+%param { driver& drv }
 
 %token IF THEN ELSE WHILE BREAK CONTINUE RETURN
 %token CONST INT VOID

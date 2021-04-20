@@ -1,5 +1,6 @@
+#line 2 "lex.yy.cpp"
 
-#line 3 "lex.yy.c"
+#line 4 "lex.yy.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -496,16 +497,26 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "jason.l"
+#line 1 "source.l"
 /****************************************************/
 /*File: jason.l                                     */
 /*Lexical Analysis for Jason Compiler               */
 /*Yueyang (Jason) Pan                               */
 /****************************************************/
-#line 8 "jason.l"
+#line 8 "source.l"
     #include "global.h"
-#line 508 "lex.yy.c"
-#line 509 "lex.yy.c"
+    #include "source.tab.hpp"
+#line 510 "lex.yy.cpp"
+/*
+%{
+    yy::parser::symbol_type
+    make_OCT_NUM(const std::string &s, const yy::parser::location_type& loc);
+    yy::parser::symbol_type
+    make_DEC_NUM(const std::string &s, const yy::parser::location_type& loc);
+    yy::parser::symbol_type
+    make_HEX_NUM(const std::string &s, const yy::parser::location_type& loc);
+%}*/
+#line 520 "lex.yy.cpp"
 
 #define INITIAL 0
 
@@ -722,9 +733,9 @@ YY_DECL
 		}
 
 	{
-#line 24 "jason.l"
+#line 34 "source.l"
 
-#line 728 "lex.yy.c"
+#line 739 "lex.yy.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -783,203 +794,203 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 25 "jason.l"
+#line 35 "source.l"
 {return IF;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 26 "jason.l"
+#line 36 "source.l"
 {return THEN;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 27 "jason.l"
+#line 37 "source.l"
 {return ELSE;}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 28 "jason.l"
+#line 38 "source.l"
 {return WHILE;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 29 "jason.l"
+#line 39 "source.l"
 {return BREAK;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 30 "jason.l"
+#line 40 "source.l"
 {return CONTINUE;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 31 "jason.l"
+#line 41 "source.l"
 {return RETURN;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 32 "jason.l"
+#line 42 "source.l"
 {return CONST;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 33 "jason.l"
+#line 43 "source.l"
 {return INT;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 34 "jason.l"
+#line 44 "source.l"
 {return VOID;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 35 "jason.l"
+#line 45 "source.l"
 {return ASSIGN;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 36 "jason.l"
+#line 46 "source.l"
 {return SEMI;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 37 "jason.l"
+#line 47 "source.l"
 {return COMMA;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 38 "jason.l"
+#line 48 "source.l"
 {return LLPAREN;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 39 "jason.l"
+#line 49 "source.l"
 {return LRPAREN;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 40 "jason.l"
+#line 50 "source.l"
 {return MLPAREN;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 41 "jason.l"
+#line 51 "source.l"
 {return MRPAREN;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 42 "jason.l"
+#line 52 "source.l"
 {return SLPAREN;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 43 "jason.l"
+#line 53 "source.l"
 {return SRPAREN;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 44 "jason.l"
+#line 54 "source.l"
 {return NOT;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 45 "jason.l"
+#line 55 "source.l"
 {return EQ;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 46 "jason.l"
+#line 56 "source.l"
 {return NEQ;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 47 "jason.l"
+#line 57 "source.l"
 {return LT;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 48 "jason.l"
+#line 58 "source.l"
 {return GT;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 49 "jason.l"
+#line 59 "source.l"
 {return LTE;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 50 "jason.l"
+#line 60 "source.l"
 {return GTE;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 51 "jason.l"
+#line 61 "source.l"
 {return PLUS;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 52 "jason.l"
+#line 62 "source.l"
 {return MINUS;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 53 "jason.l"
+#line 63 "source.l"
 {return TIMES;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 54 "jason.l"
+#line 64 "source.l"
 {return OVER;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 55 "jason.l"
+#line 65 "source.l"
 {return MOD;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 56 "jason.l"
+#line 66 "source.l"
 {return AND;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 57 "jason.l"
+#line 67 "source.l"
 {return OR;}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 58 "jason.l"
+#line 68 "source.l"
 { /*Do Nothing*/ }
 	YY_BREAK
 case 35:
 /* rule 35 can match eol */
 YY_RULE_SETUP
-#line 59 "jason.l"
+#line 69 "source.l"
 { lineno++; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 60 "jason.l"
+#line 70 "source.l"
 {return OCT_NUM;}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 61 "jason.l"
+#line 71 "source.l"
 {return DEC_NUM;}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 62 "jason.l"
+#line 72 "source.l"
 {return HEX_NUM;}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 63 "jason.l"
+#line 73 "source.l"
 {return ID;}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 64 "jason.l"
+#line 74 "source.l"
 {char c;
                 do { 
                     c=input(); 
@@ -990,7 +1001,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 71 "jason.l"
+#line 81 "source.l"
 {char c; bool outside = 0;
                 do {
                     c=input();
@@ -1007,15 +1018,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 84 "jason.l"
+#line 94 "source.l"
 {return ERROR;}
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 86 "jason.l"
+#line 96 "source.l"
 ECHO;
 	YY_BREAK
-#line 1019 "lex.yy.c"
+#line 1030 "lex.yy.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2020,5 +2031,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 86 "jason.l"
+#line 96 "source.l"
 
