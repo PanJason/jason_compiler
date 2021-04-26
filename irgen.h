@@ -63,6 +63,7 @@ private:
     ValPtr LogError(std::string_view message);
     xstl::Guard NewEnvironment();
     
+    //Continuously insert labesl into _now_func, which could be later translated easilly.
     FuncDefPtr _now_func;
     std::unordered_map<std::string_view, FuncDefPtr> _funcs;
     std::unordered_map<std::string_view, FuncDefPtr> _lib_funcs;
