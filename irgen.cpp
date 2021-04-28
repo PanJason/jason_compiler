@@ -1,6 +1,8 @@
 #include "irgen.h"
 #include <iostream>
+#include <utility>
 #include "source.tab.hpp"
+
 ValPtr IRGen::LogError(std::string_view message){
     std::cerr<<"Error From IRGen (Jason Compiler): "<< message << std::endl;
     _error_num++;
@@ -178,17 +180,46 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
         "Symbol has not been defined"
     );
     auto entry = _symbol_table->GetItem(ast.id(),true);
-    if(!entry) return LogError(
-        "Symbol Entry not found."
-    );
+
     //Generate a series of add and times like DimensionAST.
     //Not finished yet.
     auto dims = std::dynamic_pointer_cast<DimensionAST>(ast.exprs());
-    assert(entry->dim()==dims->const_dims().size());
-
-
-    auto exprs = ast.exprs()->GenerateIR(*this);
-    return std::make_shared<ArrayRefVal>(base, std::move(exprs));
+    auto dest = _now_func->AddSlot();
+    auto middle = _now_func->AddSlot();
+    if(entry){
+        std::size_t offset = 0;
+        std::size_t start = entry->symbol_size() / sizeof(int);
+        for (std::size_t i = 0; i < entry->dim(); i++){
+            start = start/entry->shape().at(i);
+            auto tmp = dims->const_dims().at(i)->GenerateIR(*this);
+            if(!tmp) assert("Fail to evaluate a dimension!");
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::move(std::make_shared<IntVal>(start)));
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, middle);
+        }
+        assert(start == 1);
+    }
+    else{
+        auto func_table = _func_table.find(_now_func->func_name());
+        if(func_table == _func_table.end()) return LogError("Current Function has no Function Table!");
+        auto func_table_entry = func_table->second.find(ast.id());
+        if(func_table_entry == func_table->second.end()) return LogError("Symbol has not been defined in the function table!");
+        //Found in function table
+        std::size_t offset = 0;
+        std::size_t start = func_table_entry->second->symbol_size()/sizeof(int);
+        //Dimension n , n-1 dimensions in the vector.
+        for (std::size_t i = 0; i < func_table_entry->second->dim()-1; i++){
+            auto tmp = dims->const_dims().at(i)->GenerateIR(*this);
+            if(!tmp) assert("Fail to evaluate a dimension!");
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::move(std::make_shared<IntVal>(start)));
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, middle);
+            start = start/func_table_entry->second->shape().at(i);
+        }
+        assert(start == 1);
+        auto tmp = dims->const_dims().at(func_table_entry->second->dim()-1)->GenerateIR(*this);
+        if(!tmp) assert("Fail to evaluate a dimension!");
+        _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, std::move(tmp));
+    }
+    return std::make_shared<ArrayRefVal>(base, dest);
 }
 
 ValPtr IRGen::GenerateOn(const ReturnAST& ast){
@@ -334,8 +365,8 @@ ValPtr IRGen::GenerateOn(const FuncDefAST& ast){
         return LogError("Function has already beed defined!");
     }
     //Create a function table
-    _func_table.insert(std::make_pair(ast.name(),std::vector<FuncTableEntry>()));
-
+    _func_table.insert(std::make_pair(ast.name(),std::unordered_map<std::string, FTEPtr>()));
+    auto table = _func_table.find(ast.name());
     //Insert the params to some function table
     auto env = NewEnvironment();
     auto sym = NewSymTable();
@@ -345,14 +376,26 @@ ValPtr IRGen::GenerateOn(const FuncDefAST& ast){
         {
             auto tmp = std::dynamic_pointer_cast<FuncFParamArrayAST>(i);
             _vars->AddItem(tmp->name(), std::make_shared<ArgRefVal>(p++));
-            auto iter = _func_table.find(ast.name());
-            iter->second.push_back(FuncTableEntry(tmp->param_type(), 1));
+            
+            auto entry = std::make_shared<FuncTableEntry>(tmp->param_type(),1);
+            //Evaluate each dimension and insert
+            if(tmp->dimension()!=nullptr){
+                auto dims = std::dynamic_pointer_cast<DimensionAST>(tmp->dimension());
+                entry->_dim = 1 + dims->const_dims().size();
+                for(const auto &i : dims->const_dims()){
+                    auto tmp = i->Eval(*this);
+                    if(!tmp) return LogError("Fail To Evaluate the dimension!");
+                    entry->_symbol_size *= (*tmp);
+                    entry->_shape.push_back(*tmp);
+                }
+            }
+            table->second.insert(std::make_pair<const std::string&, FTEPtr>(tmp->name(), std::move(entry)));
         }
         if(i->is_array == 0){
             auto tmp = std::dynamic_pointer_cast<FuncFParamVarAST>(i);
             _vars->AddItem(tmp->name(), std::make_shared<ArgRefVal>(p++));
-            auto iter = _func_table.find(ast.name());
-            iter->second.push_back(FuncTableEntry(tmp->param_type(), 0));
+            auto entry = std::make_shared<FuncTableEntry>(tmp->param_type(),0);
+            table->second.insert(std::make_pair<const std::string&, FTEPtr>(tmp->name(), std::move(entry)));
         }
     }
     ast.block()->GenerateIR(*this);
@@ -390,7 +433,60 @@ ValPtr IRGen::GenerateOn(const ConstDefListAST& ast){
 //Generate Declaration
 //Generate Assignment
 ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
-
+    if(ast.is_array_def()){
+        //2. Generate on Arrays
+        //Evaluate expr or {expr, expr, {expr},{expr}}
+        //To-do
+        //Create slot
+        auto slot = _now_func->AddSlot();
+        //Add slot to _vars
+        if (!_vars->AddItem(ast.id(), slot)) {
+            return LogError("Array has already been defined");
+        }
+        //Evaluate each dimension
+        std::vector<std::optional<int> > dim_list;
+        auto dim_exprs = std::dynamic_pointer_cast<DimensionAST>(ast.const_exprs());
+        for(const auto &i : dim_exprs->const_dims()){
+            auto expr = i->Eval(*this);
+            if(!expr) return LogError("Can not Evaluate the Dimension of the const Array");
+            dim_list.push_back(std::move(expr));
+        }
+        //Create Entry in the Symbol Table
+        auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT, 1, 1);
+        ste->_dim = dim_list.size();
+        for(const auto &i: dim_list){
+            ste->_symbol_size *= (*i);
+            ste->_shape.push_back(*i);
+        }
+        //Insert Array Declaration Instruction
+        _now_func->PushInst<DeclareArrInst>(slot, ste->symbol_size());
+        _symbol_table->AddItem(ast.id(), ste);
+        //Store the value
+        //To-do
+        //Insert Array Assign Instruction
+        //To-do 
+    }
+    else{
+        //1. Generate on Variables
+        auto expr = ast.const_init_val()->Eval(*this);
+        if (!expr) return LogError("Can not evaluate the Init Value of a const Variable");
+        //Create slot
+        auto slot = _now_func->AddSlot();
+        //Add slot to _vars
+        if (!_vars->AddItem(ast.id(), slot)) {
+            return LogError("symbol has already been defined");
+        }
+        //Insert Variable Declaration Instruction
+        _now_func->PushInst<DeclareVarInst>(slot);
+        //Create Entry in the Symbol Table
+        auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT,1,0);
+        _symbol_table->AddItem(ast.id(), std::move(ste));
+        //Evaluate and Store init value;
+        if(_const_vars.find(ast.id())!=_const_vars.end()) return LogError("Const Variable already been defined!");
+        _const_vars.insert(std::make_pair<const std::string &, std::vector<int> >(ast.id(), {*expr}));
+        _now_func->PushInst<AssignInst>(std::move(slot), std::make_shared<IntVal>((*expr)));
+        return nullptr;
+    }
 
 }
 /*
@@ -400,8 +496,19 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
     ValPtr GenerateOn(const InitValArrayAST& ast);
     ValPtr GenerateOn(const InitValAST& ast);
 */
+ValPtr IRGen::GenerateOn(const VarDeclAST& ast){
+    ast.var_defs()->GenerateIR(*this);
+    return nullptr;
+}
+ValPtr IRGen::GenerateOn(const VarDefListAST& ast){
+    for(const auto &i : ast.const_var_defs()){
+        auto tmp = std::dynamic_pointer_cast<VarDefAST>(i);
+        tmp->GenerateIR(*this);
+    }
+    if(_error_num) return LogError("Error in Var Definitions!");
+    return nullptr;
+}
+ValPtr IRGen::GenerateOn(const VarDefAST& ast){
 
-//ArrayAST is wrong
-//FuncDef is wrong
-
-//Todo: ArrayAST, FuncDefAST, ConstDefAST, VarDefAST;
+}
+//Todo: ConstDefAST, VarDefAST;

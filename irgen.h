@@ -82,7 +82,7 @@ private:
     //This should also be nested!
     xstl::NestedMapPtr<std::string, STEPtr> _symbol_table;
     //The function table don't have to be nested because we don't have nested functions
-    std::unordered_map<std::string, std::vector<FuncTableEntry> > _func_table;
+    std::unordered_map<std::string, std::unordered_map<std::string, FTEPtr> > _func_table;
 
     //This map is used to store the values of const variables and arrays.
     std::unordered_map<std::string, std::vector<int> > _const_vars;

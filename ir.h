@@ -56,12 +56,21 @@ TokenType _ret_type;
 };
 using FuncDefPtr = std::shared_ptr<FunctionDef>;
 
-class DeclareInst : public InstBase {
-private:
-    DeclareInst(ValPtr val): _val(std::move(val)) {}
-    void Dump_Eeyore() const override;
+class DeclareVarInst : public InstBase {
 public:
+    DeclareVarInst(ValPtr val): _val(std::move(val)) {}
+    void Dump_Eeyore() const override;
+private:
     ValPtr _val;
+};
+
+class DeclareArrInst : public InstBase {
+public:
+    DeclareArrInst(ValPtr val, std::size_t symbol_size): _val(std::move(val)), _symbol_size(symbol_size) {}
+    void Dump_Eeyore() const override;
+private:
+    ValPtr _val;
+    std::size_t _symbol_size;
 };
 
 class AssignInst : public InstBase {

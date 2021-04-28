@@ -17,16 +17,15 @@
 class SymbolTableEntry{
 public:
     SymbolTableEntry(TokenType symbol_type, bool is_const, 
-    bool is_pointer, std::size_t symbol_size)
+    bool is_pointer)
     : _symbol_type(symbol_type), _is_const(is_const),
-    _is_pointer(is_pointer), _symbol_size(symbol_size) {}
+    _is_pointer(is_pointer), _symbol_size(4),_dim(1&is_pointer),_shape() {}
     TokenType symbol_type() {return _symbol_type;}
     bool is_const() {return _is_const; }
     bool is_pointer() {return _is_pointer; }
     std::size_t symbol_size() {return _symbol_size;}
     std::size_t dim() {return _dim;}
     std::vector<std::size_t> &shape() {return _shape;}
-private:
     TokenType _symbol_type;
     bool _is_const;
     bool _is_pointer;
@@ -40,19 +39,21 @@ using STEPtr = std::shared_ptr<SymbolTableEntry>;
 class FuncTableEntry{
 public:
     FuncTableEntry(TokenType param_type, bool is_pointer)
-    : _param_type(param_type), _is_pointer(is_pointer){}
+    : _param_type(param_type), _is_pointer(is_pointer),_symbol_size(4),_dim(1&is_pointer),_shape(){}
     TokenType param_type() {return _param_type;}
     bool is_pointer() {return _is_pointer;}
+    std::size_t symbol_size() {return _symbol_size;}
     std::size_t dim() {return _dim;}
     std::vector<std::size_t> &shape() {return _shape;}
-private:
     TokenType _param_type;
     bool _is_pointer;
     //the dim of a variable is 0;
+    std::size_t _symbol_size;
     std::size_t _dim;
     std::vector<std::size_t> _shape;
 
 };
+using FTEPtr = std::shared_ptr<FuncTableEntry>;
 
 class BaseAst {
 public:
@@ -166,6 +167,7 @@ public:
     std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &var_defs()  {return _var_defs; }
+    const ASTPtrList &const_var_defs() const {return _var_defs;}
 private:
     ASTPtrList _var_defs;
 };
