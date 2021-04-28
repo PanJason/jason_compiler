@@ -11,6 +11,7 @@
 #include <map>
 #include "source.tab.hpp"
 #include "global.h" 
+#include "irgen.h"
 
 // Tell Flex the lexer's prototype ...
 # define YY_DECL \
@@ -28,6 +29,7 @@ public:
 
   int result;
   ASTPtr root;
+  IRGen irgen;
 
   int parse (const std::string& f);
   std::string file;

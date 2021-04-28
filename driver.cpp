@@ -7,7 +7,7 @@
 #include "driver.h"
 #include "source.tab.hpp"
 
-driver::driver (): trace_parsing (false), trace_scanning (false)
+driver::driver (): trace_parsing (false), trace_scanning (false), irgen()
 {}
 
 int driver::parse (const std::string &f)

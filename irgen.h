@@ -68,6 +68,7 @@ private:
     std::unordered_map<std::string_view, FuncDefPtr> _funcs;
     std::unordered_map<std::string_view, FuncDefPtr> _lib_funcs;
     xstl::NestedMapPtr<std::string, ValPtr> _vars;
-
+    //Add a new symbol table.
+    std::unordered_map<std::string, SymbolTableEntry> _symbol_table;
 };
 #endif

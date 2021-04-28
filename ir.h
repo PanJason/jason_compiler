@@ -32,15 +32,153 @@ using ValPtrList = std::vector<ValPtr>;
 
 class FunctionDef{
 public:
+FunctionDef(const std::string &name, std::size_t num_args)
+: _func_name(name), _num_args(num_args), _slot_num(0){}
 
+template <typename Inst, typename... Args>
+void PushInst(Args &&...args){
+    _insts.emplace_back(
+        std::make_shared<Inst>(std::forward<Args>(args)...);
+    );
+}
+
+ValPtr AddSlot() {return std::make_shared<SlotVal>(_slot_num++);}
 const std::string &func_name() const {return _func_name;}
 std::size_t num_args() const {return _num_args;}
 
 private:
 std::string _func_name;
-std::size_t _num_args;
+std::size_t _num_args, _slot_num;
 InstPtrList _insts;
 };
 using FuncDefPtr = std::shared_ptr<FunctionDef>;
+
+class DeclareInst : public InstBase {
+private:
+    DeclareInst(ValPtr val): _val(std::move(val)) {}
+    void Dump_Eeyore() const override;
+public:
+    ValPtr _val;
+};
+
+class AssignInst : public InstBase {
+public:
+    AssignInst(ValPtr dest, ValPtr val)
+    : _dest(std::move(dest)), _val(std::move(val)) {}
+    void Dump_Eeyore() const override;
+private:
+    ValPtr _dest, _val;
+};
+
+class BranchInst : public InstBase {
+public:
+    BranchInst(bool bnez, ValPtr cond, ValPtr label)
+    : _bnez(bnez), _cond(std::move(cond)), _label(std::move(label)) {}
+    void Dump_Eeyore() const override;
+private:
+    //bnez (true) or beqz (false)
+    bool _bnez;
+    ValPtr _cond, _label;
+};
+
+class JumpInst : public InstBase {
+public:
+    JumpInst(ValPtr label) : _label(std::move(label)) {}
+    void Dump_Eeyore() const override;
+private:
+    ValPtr _label;
+};
+class LabelInst : public InstBase {
+public:
+    LabelInst(ValPtr label) : _label(std::move(label)) {}
+    void Dump_Eeyore() const override;
+private:
+    ValPtr _label;
+};
+
+class FuncCallInst : public InstBase {
+public:
+    FuncCallInst(ValPtr dest, FuncDefPtr func, ValPtrList args)
+    : _dest(std::move(dest)), _func(std::move(func)), _args(std::move(args)){}
+    void Dump_Eeyore() const override;
+private:
+    ValPtr _dest;
+    FuncDefPtr _func;
+    ValPtrList _args;
+
+};
+
+class ReturnInst : public InstBase{
+public:
+    ReturnInst(ValPtr val) : _val(std::move(val)) {}
+    void Dump_Eeyore() const override;
+private:
+    ValPtr _val;
+};
+
+class BinaryInst : public InstBase{
+public:
+BinaryInst(TokenType op, ValPtr dest, ValPtr lhs, ValPtr rhs)
+:_op(op), _dest(std::move(dest)), _lhs(std::move(lhs)), _rhs(std::move(rhs)) {}
+void Dump_Eeyore() const override;
+private:
+    TokenType _op;
+    ValPtr _dest, _lhs, _rhs;
+};
+
+class UnaryInst : public InstBase{
+public:
+    UnaryInst(TokenType op, ValPtr dest, ValPtr opr)
+    : _op(op), _dest(std::move(dest)), _opr(std::move(opr)) {}
+    void Dump_Eeyore() const override;
+private:
+    TokenType _op;
+    ValPtr _dest, _opr;
+};
+
+class SlotVal: public ValueBase{
+public:
+    SlotVal(std::size_t id) : _id(id) {_next_id++;}
+    void Dump_Eeyore() const override;
+private:
+    static std::size_t _next_id;
+    std::size_t _id;
+};
+
+class ArgRefVal : public ValueBase{
+public:
+    ArgRefVal(std::size_t id) : _id(id) {}
+    void Dump_Eeyore() const override;
+private:
+    std::size_t _id;
+};
+
+class ArrayRefVal : public ValueBase{
+public:
+    ArrayRefVal(std::size_t id, ValPtr offset)
+    : _id(id), _offset(std::move(offset)) {}
+    void Dump_Eeyore() const override;
+private:
+    std::size_t _id;
+    ValPtr _offset;
+};
+
+class LabelVal : public ValueBase{
+public:
+    LabelVal() : _id(_next_id++) {}
+    void Dump_Eeyore() const override;
+
+private:
+    static std::size_t _next_id;
+    std::size_t _id;
+};
+
+class IntVal : public ValueBase{
+public:
+    IntVal(int val): _val(val) {}
+    void Dump_Eeyore() const override;
+private:
+    int _val;
+};
 
 #endif

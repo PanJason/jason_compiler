@@ -34,7 +34,7 @@ dec_num         {nonzero_digit}{dec_digit}*
 identifier_nondigit [a-zA-Z_]
 identifier_all  [a-zA-Z0-9_]
 identifier      {identifier_nondigit}{identifier_all}*
-whitespace      [ \t]+
+whitespace      [ \t\r]+
 newline         \n
 %{
     #define YY_USER_ACTION loc.columns (yyleng);    
