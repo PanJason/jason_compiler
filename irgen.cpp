@@ -1,7 +1,6 @@
 #include "irgen.h"
 #include <iostream>
 #include "source.tab.hpp"
-
 ValPtr IRGen::LogError(std::string_view message){
     std::cerr<<"Error From IRGen (Jason Compiler): "<< message << std::endl;
     _error_num++;
@@ -19,6 +18,85 @@ xstl::Guard IRGen::NewEnvironment(){
 xstl::Guard IRGen::NewLoopEnv(){
     _loop_labels = xstl::MakeNestedMap(_loop_labels);
     return xstl::Guard([this] {_loop_labels = _loop_labels->outer();});
+}
+
+xstl::Guard IRGen::NewSymTable(){
+    _symbol_table = xstl::MakeNestedMap(_symbol_table);
+    return xstl::Guard([this]{_symbol_table = _symbol_table->outer();});
+}
+
+std::optional<int> IRGen::EvalOn(const IntAST& ast){
+    return ast.val();
+}
+std::optional<int> IRGen::EvalOn(const IdAST& ast)
+{
+    auto iter = _const_vars.find(ast.id());
+    if(iter == _const_vars.end()) assert("Not a const varible or evaluating unknown const variable");
+    return iter->second.front();
+}
+std::optional<int> IRGen::EvalOn(const ArrayAST& ast){
+    auto iter = _const_vars.find(ast.id());
+    if(iter == _const_vars.end()) assert("Not a const array or evaluating unknown const array element");
+    auto entry = _symbol_table->GetItem(ast.id(), true);
+    if(!entry) assert("Array not defined yet!");
+    auto dims = std::dynamic_pointer_cast<DimensionAST>(ast.exprs());
+    assert(dims->const_dims().size()==entry->dim());
+    std::size_t offset = 0;
+    std::size_t start = entry->symbol_size() / sizeof(int);
+    for (std::size_t i = 0; i < entry->dim(); i++){
+        start = start/entry->shape().at(i);
+        auto tmp = dims->const_dims().at(i)->Eval(*this);
+        if(!tmp) assert("Fail to evaluate a dimension!");
+        offset += start * (*tmp);
+    }
+    assert(start == 1);
+    return iter->second.at(offset);
+}
+
+std::optional<int> IRGen::EvalOn(const BinaryAST& ast){
+  if (ast.op() == yy::parser::token::TOK_AND || ast.op() == yy::parser::token::TOK_OR) {
+    // evaluate lhs first
+    auto lhs = ast.lhs()->Eval(*this);
+    if (!lhs || (ast.op() == yy::parser::token::TOK_AND && !*lhs) ||
+        (ast.op() == yy::parser::token::TOK_OR && *lhs)) {
+      return lhs;
+    }
+    // then evaluate rhs
+    return ast.rhs()->Eval(*this);
+  }
+  else {
+    // evaluate the lhs & rhs
+    auto lhs = ast.lhs()->Eval(*this), rhs = ast.rhs()->Eval(*this);
+    if (!lhs || !rhs) return {};
+    // perform binary operation
+    switch (ast.op()) {
+      case yy::parser::token::TOK_PLUS: return *lhs + *rhs;
+      case yy::parser::token::TOK_MINUS: return *lhs - *rhs;
+      case yy::parser::token::TOK_TIMES: return *lhs * *rhs;
+      case yy::parser::token::TOK_OVER: return *lhs / *rhs;
+      case yy::parser::token::TOK_MOD: return *lhs % *rhs;
+      case yy::parser::token::TOK_LT: return *lhs < *rhs;
+      case yy::parser::token::TOK_LTE: return *lhs <= *rhs;
+      case yy::parser::token::TOK_GT: return *lhs > *rhs;
+      case yy::parser::token::TOK_GTE: return *lhs >= *rhs;
+      case yy::parser::token::TOK_EQ: return *lhs == *rhs;
+      case yy::parser::token::TOK_NEQ: return *lhs != *rhs;
+      default: assert(false && "unknown binary operator");
+    }
+    return {};
+  }
+}
+std::optional<int> IRGen::EvalOn(const UnaryAST& ast){
+  auto opr = ast.opr()->Eval(*this);
+  if (!opr) return {};
+  // perform unary operation
+  switch (ast.op()) {
+    case yy::parser::token::TOK_MINUS: return -*opr;
+    case yy::parser::token::TOK_NOT: return !*opr;
+    case yy::parser::token::TOK_PLUS: return *opr;
+    default: assert(false && "unknown unary operator");
+  }
+  return {};
 }
 
 /*
@@ -92,12 +170,23 @@ ValPtr IRGen::GenerateOn(const DimensionAST& ast){
 }
 
 
-//ID Dim
+//ID Dim 
+//Should merge with DimensionAST
 ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     auto base = _vars->GetItem(ast.id());
     if(!base) return LogError(
         "Symbol has not been defined"
     );
+    auto entry = _symbol_table->GetItem(ast.id(),true);
+    if(!entry) return LogError(
+        "Symbol Entry not found."
+    );
+    //Generate a series of add and times like DimensionAST.
+    //Not finished yet.
+    auto dims = std::dynamic_pointer_cast<DimensionAST>(ast.exprs());
+    assert(entry->dim()==dims->const_dims().size());
+
+
     auto exprs = ast.exprs()->GenerateIR(*this);
     return std::make_shared<ArrayRefVal>(base, std::move(exprs));
 }
@@ -131,7 +220,7 @@ ValPtr IRGen::GenerateOn(const FuncCallAST& ast){
 }
 
 ValPtr IRGen::GenerateOn(const ExpAST& ast){
-    ast.expr()->GenerateIR(*this);
+    if (ast.expr() != std::make_shared<ExpAST>(nullptr)) ast.expr()->GenerateIR(*this);
     return nullptr;
 }
 
@@ -206,6 +295,7 @@ ValPtr IRGen::GenerateOn(const AssignAST& ast){
 ValPtr IRGen::GenerateOn(const BlockAST& ast){
     if (ast.blockitem() == nullptr) return nullptr;
     auto env = NewEnvironment();
+    auto sym = NewSymTable();
     ast.blockitem()->GenerateIR(*this);
     if(_error_num) return LogError("There is Error in this block!");
     return nullptr;
@@ -248,6 +338,7 @@ ValPtr IRGen::GenerateOn(const FuncDefAST& ast){
 
     //Insert the params to some function table
     auto env = NewEnvironment();
+    auto sym = NewSymTable();
     int p = 0;
     for(const auto &i : param_list->const_params()){
         if(i->is_array == 1)
@@ -309,3 +400,8 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
     ValPtr GenerateOn(const InitValArrayAST& ast);
     ValPtr GenerateOn(const InitValAST& ast);
 */
+
+//ArrayAST is wrong
+//FuncDef is wrong
+
+//Todo: ArrayAST, FuncDefAST, ConstDefAST, VarDefAST;

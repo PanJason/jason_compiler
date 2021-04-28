@@ -56,12 +56,20 @@ class IRGen{
     ValPtr GenerateOn(const IdAST& ast);
     ValPtr GenerateOn(const ArrayAST& ast);
 
+    std::optional<int> EvalOn(const IdAST& ast);
+    std::optional<int> EvalOn(const IntAST& ast);
+    std::optional<int> EvalOn(const ArrayAST& ast);
+    std::optional<int> EvalOn(const UnaryAST& ast);
+    std::optional<int> EvalOn(const BinaryAST& ast);
+
     std::size_t error_num() const {return _error_num;}
 private:
     std::size_t _error_num;
     ValPtr LogError(std::string_view message);
     xstl::Guard NewEnvironment();
     xstl::Guard NewLoopEnv();
+    //The symbol Table inside a block;
+    xstl::Guard NewSymTable();
     
     //Continuously insert labesl into _now_func, which could be later translated easilly.
     FuncDefPtr _now_func;
@@ -71,7 +79,12 @@ private:
     xstl::NestedMapPtr<std::string, ValPtr> _loop_labels;
 
     //Add a new symbol table.
-    std::unordered_map<std::string, SymbolTableEntry> _symbol_table;
+    //This should also be nested!
+    xstl::NestedMapPtr<std::string, STEPtr> _symbol_table;
+    //The function table don't have to be nested because we don't have nested functions
     std::unordered_map<std::string, std::vector<FuncTableEntry> > _func_table;
+
+    //This map is used to store the values of const variables and arrays.
+    std::unordered_map<std::string, std::vector<int> > _const_vars;
 };
 #endif
