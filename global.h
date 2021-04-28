@@ -11,32 +11,51 @@
 #include <memory>
 #include <utility>
 #include <iostream>
+#include <stdexcept>
 #include "ir.h"
 
 class SymbolTableEntry{
 public:
-    SymbolTableEntry(std::string &symbol_name, TokenType symbol_type,
-    bool is_const, bool is_pointer, std::size_t symbol_size)
-    : _symbol_name(symbol_name), _symbol_type(symbol_type), _is_const(is_const),
+    SymbolTableEntry(TokenType symbol_type, bool is_const, 
+    bool is_pointer, std::size_t symbol_size)
+    : _symbol_type(symbol_type), _is_const(is_const),
     _is_pointer(is_pointer), _symbol_size(symbol_size) {}
-    std::string& symbol_name() {return _symbol_name;}
     TokenType symbol_type() {return _symbol_type;}
     bool is_const() {return _is_const; }
     bool is_pointer() {return _is_pointer; }
     std::size_t symbol_size() {return _symbol_size;}
 private:
-    std::string _symbol_name;
     TokenType _symbol_type;
     bool _is_const;
     bool _is_pointer;
     std::size_t _symbol_size;
 };
 
+class FuncTableEntry{
+public:
+    FuncTableEntry(TokenType param_type, bool is_pointer)
+    : _param_type(param_type), _is_pointer(is_pointer){}
+    TokenType param_type() {return _param_type;}
+    bool is_pointer() {return _is_pointer;}
+private:
+    TokenType _param_type;
+    bool _is_pointer;
+
+};
+
 class BaseAst {
 public:
     virtual ~BaseAst() = default;
-    virtual std::optional<int> Eval() const = 0;
-    virtual ValPtr GenerateIR(IRGen &gen) const = 0;
+    virtual std::optional<int> Eval() const {
+        throw std::runtime_error("Not implemented. Should not be called!");
+    };
+    virtual ValPtr GenerateIR(IRGen &gen) const {
+        throw std::runtime_error("Not implemented. Should not be called!");
+    };
+    int is_decl = 0;
+    //zero if this node is a variable, one if this node is a array;
+    //-1 otherwise
+    int is_array = -1;
 };
 using ASTPtr = std::shared_ptr<BaseAst>;
 using ASTPtrList = std::vector<ASTPtr>;
@@ -56,7 +75,7 @@ public:
 class ConstDeclAST : public BaseAst{
 public:
     ConstDeclAST(const TokenType decl_type, ASTPtr const_defs)
-    : _decl_type(decl_type), _const_defs(std::move(const_defs)) {}
+    : _decl_type(decl_type), _const_defs(std::move(const_defs)) {is_decl = 1;}
     std::optional<int> Eval() const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const TokenType decl_type() const {return _decl_type; }
@@ -116,7 +135,7 @@ private:
 class VarDeclAST : public BaseAst{
 public:
     VarDeclAST(const TokenType decl_type, ASTPtr var_defs)
-    : _decl_type(decl_type), _var_defs(std::move(var_defs)) {}
+    : _decl_type(decl_type), _var_defs(std::move(var_defs)) {is_decl = 1;}
     std::optional<int> Eval() const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const TokenType decl_type() const {return _decl_type; }
@@ -197,9 +216,10 @@ class FuncFParamsAST : public BaseAst{
 public:
     FuncFParamsAST(ASTPtrList param_list)
     : _param_list(std::move(param_list)) {}
-    std::optional<int> Eval() const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
+    //std::optional<int> Eval() const override;
+    //ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &param_list() {return _param_list;}
+    const ASTPtrList &const_params() const {return _param_list;}
 private:
     ASTPtrList _param_list;
 };
@@ -207,9 +227,9 @@ private:
 class FuncFParamVarAST : public BaseAst{
 public:
     FuncFParamVarAST(const TokenType param_type, const std::string &name)
-    : _param_type(param_type), _name(name) {}
-    std::optional<int> Eval() const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
+    : _param_type(param_type), _name(name) {is_array = 0;}
+    //std::optional<int> Eval() const override;
+    //ValPtr GenerateIR(IRGen &gen) const override;
     const TokenType param_type() const {return _param_type;}
     const std::string &name() const {return _name; }
 private:
@@ -220,9 +240,9 @@ private:
 class FuncFParamArrayAST : public BaseAst{
 public:
     FuncFParamArrayAST(const TokenType param_type, const std::string &name, ASTPtr dimension)
-    : _param_type(param_type), _name(name), _dimension(std::move(dimension)){}
-    std::optional<int> Eval() const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
+    : _param_type(param_type), _name(name), _dimension(std::move(dimension)){is_array = 1;}
+    //std::optional<int> Eval() const override;
+    //ValPtr GenerateIR(IRGen &gen) const override;
     const TokenType param_type() const {return _param_type;}
     const std::string &name() const {return _name; }
     const ASTPtr &dimension() const {return _dimension;}
@@ -239,6 +259,7 @@ public:
     std::optional<int> Eval() const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &dims() {return _dims; }
+    const ASTPtrList &const_dims() const {return _dims; }
 private:
     ASTPtrList _dims;
 };
@@ -261,6 +282,7 @@ public:
     std::optional<int> Eval() const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &items() {return _items;}
+    const ASTPtrList &const_items() const {return _items;}
 private:
     ASTPtrList _items;
 };
@@ -378,9 +400,8 @@ class FuncRParamsAST : public BaseAst {
 public:
     FuncRParamsAST(ASTPtrList exprs)
     : _exprs(std::move(exprs)) {}
-    std::optional<int> Eval() const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &exprs() {return _exprs;}
+    const ASTPtrList &const_exprs() const {return _exprs;}
 private:
     ASTPtrList _exprs;
 };
@@ -405,16 +426,6 @@ public:
     const std::string &id() const {return _id; }
 private:
     std::string _id;
-};
-
-class TokenTypeAst : public BaseAst{
-public:
-    TokenTypeAst(const TokenType func_type) : _func_type(func_type) {}
-    std::optional<int> Eval() const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
-    const TokenType func_type() const {return _func_type;}
-private:
-    TokenType _func_type;
 };
 
 class ArrayAST : public BaseAst {

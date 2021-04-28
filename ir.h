@@ -32,8 +32,8 @@ using ValPtrList = std::vector<ValPtr>;
 
 class FunctionDef{
 public:
-FunctionDef(const std::string &name, std::size_t num_args)
-: _func_name(name), _num_args(num_args), _slot_num(0){}
+FunctionDef(const std::string &name, std::size_t num_args, TokenType ret_type)
+: _func_name(name), _num_args(num_args), _ret_type(ret_type), _slot_num(0){}
 
 template <typename Inst, typename... Args>
 void PushInst(Args &&...args){
@@ -45,11 +45,14 @@ void PushInst(Args &&...args){
 ValPtr AddSlot() {return std::make_shared<SlotVal>(_slot_num++);}
 const std::string &func_name() const {return _func_name;}
 std::size_t num_args() const {return _num_args;}
+std::size_t slot_num() const {return _slot_num;}
+TokenType ret_type() const {return _ret_type;}
 
 private:
 std::string _func_name;
 std::size_t _num_args, _slot_num;
 InstPtrList _insts;
+TokenType _ret_type;
 };
 using FuncDefPtr = std::shared_ptr<FunctionDef>;
 
@@ -155,11 +158,11 @@ private:
 
 class ArrayRefVal : public ValueBase{
 public:
-    ArrayRefVal(std::size_t id, ValPtr offset)
-    : _id(id), _offset(std::move(offset)) {}
+    ArrayRefVal(ValPtr base, ValPtr offset)
+    : _base(base), _offset(std::move(offset)) {}
     void Dump_Eeyore() const override;
 private:
-    std::size_t _id;
+    ValPtr _base;
     ValPtr _offset;
 };
 

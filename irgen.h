@@ -54,7 +54,6 @@ class IRGen{
     ValPtr GenerateOn(const FuncRParamsAST& ast);
     ValPtr GenerateOn(const IntAST& ast);
     ValPtr GenerateOn(const IdAST& ast);
-    ValPtr GenerateOn(const TokenTypeAst& ast);
     ValPtr GenerateOn(const ArrayAST& ast);
 
     std::size_t error_num() const {return _error_num;}
@@ -62,13 +61,17 @@ private:
     std::size_t _error_num;
     ValPtr LogError(std::string_view message);
     xstl::Guard NewEnvironment();
+    xstl::Guard NewLoopEnv();
     
     //Continuously insert labesl into _now_func, which could be later translated easilly.
     FuncDefPtr _now_func;
     std::unordered_map<std::string_view, FuncDefPtr> _funcs;
     std::unordered_map<std::string_view, FuncDefPtr> _lib_funcs;
     xstl::NestedMapPtr<std::string, ValPtr> _vars;
+    xstl::NestedMapPtr<std::string, ValPtr> _loop_labels;
+
     //Add a new symbol table.
     std::unordered_map<std::string, SymbolTableEntry> _symbol_table;
+    std::unordered_map<std::string, std::vector<FuncTableEntry> > _func_table;
 };
 #endif
