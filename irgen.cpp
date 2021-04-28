@@ -435,7 +435,7 @@ ValPtr IRGen::GenerateOn(const ConstDefListAST& ast){
 ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
     if(ast.is_array_def()){
         //2. Generate on Arrays
-        //Evaluate expr or {expr, expr, {expr},{expr}}
+        //Evaluate expr or {expr, expr, {expr, expr},{expr}}
         //To-do
         //Create slot
         auto slot = _now_func->AddSlot();
@@ -512,3 +512,6 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
 
 }
 //Todo: ConstDefAST, VarDefAST;
+//Todo: Finish ConstDefAST, VarDefAST
+//Todo: Finish Eval and GenerateIR in global.cpp
+//Todo: Finish irgen.cpp to dump the Eeyore.s
