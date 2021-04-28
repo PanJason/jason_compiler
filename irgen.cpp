@@ -515,3 +515,4 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
 //Todo: Finish ConstDefAST, VarDefAST
 //Todo: Finish Eval and GenerateIR in global.cpp
 //Todo: Finish irgen.cpp to dump the Eeyore.s
+//Todo: define a new InstPtrList just for Declarations
