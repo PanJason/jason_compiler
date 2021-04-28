@@ -92,6 +92,7 @@ public:
     std::optional<int> Eval() const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &const_defs() {return _const_defs;}
+    const ASTPtrList &const_const_defs() const {return _const_defs;}
 private:
     ASTPtrList _const_defs;
 };

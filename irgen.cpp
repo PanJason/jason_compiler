@@ -71,6 +71,9 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
 }
 
 //[Exp][Exp]...[Exp]
+//Here is wrong 
+//Could not generate index only using dimension
+//Should change ConstDefAST and ValDefAST
 ValPtr IRGen::GenerateOn(const DimensionAST& ast){
     ValPtr old_dest = nullptr;
     for(auto &i : ast.const_dims()){
@@ -274,7 +277,31 @@ ValPtr IRGen::GenerateOn(const FuncDefAST& ast){
     always some variables or some arrays adding some exps;
     
 */
+//CONST INT ConstDefListAST;
+//ConstDef, ConstDef, ... ConstDef
+//
+ValPtr IRGen::GenerateOn(const ConstDeclAST& ast){
+    ast.const_defs()->GenerateIR(*this);
+    return nullptr;
+}
 
+ValPtr IRGen::GenerateOn(const ConstDefListAST& ast){
+    for(const auto &i : ast.const_const_defs()){
+        auto tmp = std::dynamic_pointer_cast<ConstDefAST>(i);
+        tmp->GenerateIR(*this);
+    }
+    if(_error_num) return LogError("Error in Const Definitions!");
+    return nullptr;
+}
+//Somethings Have to do
+//Evaluate each expression
+//Store Values
+//Generate Declaration
+//Generate Assignment
+ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
+
+
+}
 /*
     ValPtr GenerateOn(const VarDeclAST& ast);
     ValPtr GenerateOn(const VarDefListAST& ast);
