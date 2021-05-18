@@ -42,6 +42,13 @@ void PushInst(Args &&...args){
     );
 }
 
+template <typename Inst, typename... Args>
+void PushDeclInst(Args &&...args){
+    _decl_insts.emplace_back(
+        std::make_shared<Inst>(std::forward<Args>(args)...);
+    );
+}
+
 ValPtr AddSlot() {return std::make_shared<SlotVal>(_slot_num++);}
 const std::string &func_name() const {return _func_name;}
 std::size_t num_args() const {return _num_args;}
@@ -52,6 +59,7 @@ private:
 std::string _func_name;
 std::size_t _num_args, _slot_num;
 InstPtrList _insts;
+InstPtrList _decl_insts; //This definsts list is used to generate declarations First.
 TokenType _ret_type;
 };
 using FuncDefPtr = std::shared_ptr<FunctionDef>;

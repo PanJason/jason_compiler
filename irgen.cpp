@@ -154,7 +154,10 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
 //Here is wrong 
 //Could not generate index only using dimension
 //Should change ConstDefAST and ValDefAST
+//This function should not be called directly 
 ValPtr IRGen::GenerateOn(const DimensionAST& ast){
+    return LogError("The Generate Dimension Function should not be called directly.!");
+    /*
     ValPtr old_dest = nullptr;
     for(auto &i : ast.const_dims()){
         if (old_dest == nullptr){
@@ -169,11 +172,14 @@ ValPtr IRGen::GenerateOn(const DimensionAST& ast){
         }
     }
     return old_dest;
+    */
 }
 
 
 //ID Dim 
 //Should merge with DimensionAST
+//Here ArrayAST only appear in the LVal and LVal won't appear in the constdef and vardef
+//which would be generated explicitly later on.
 ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     auto base = _vars->GetItem(ast.id());
     if(!base) return LogError(
@@ -313,12 +319,22 @@ ValPtr IRGen::GenerateOn(const CondAST& ast){
     return nullptr;
 }
 
+//Here if both the LVal and the Exp are Array Element,
+//There is problem because Eeyore does not allow 
+
 ValPtr IRGen::GenerateOn(const AssignAST& ast){
     auto expr = ast.expr()->GenerateIR(*this);
     if(!expr) return nullptr;
     auto slot = ast.lval()->GenerateIR(*this);
     if(!slot) return LogError("Symbol Undefined");
-    _now_func->PushInst<AssignInst>(std::move(slot), std::move(expr));
+    if(ast.expr()->is_lval_array == 1 && ast.lval()->is_lval_array == 1){
+        auto dest = _now_func->AddSlot();
+        _now_func->PushInst<AssignInst>(dest, std::move(expr));
+        _now_func->PushInst<AssignInst>(std::move(slot), std::move(dest));
+    }
+    else{
+        _now_func->PushInst<AssignInst>(std::move(slot), std::move(expr));
+    }
     return nullptr;
 }
 
@@ -459,12 +475,38 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
             ste->_shape.push_back(*i);
         }
         //Insert Array Declaration Instruction
-        _now_func->PushInst<DeclareArrInst>(slot, ste->symbol_size());
+        _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
         _symbol_table->AddItem(ast.id(), ste);
         //Store the value
-        //To-do
-        //Insert Array Assign Instruction
-        //To-do 
+        std::vector<int> temp_const_values;
+        //First have to check _const_init_value points to a single expression or 
+        //ConstInitValArray
+        if (ast.const_init_val()->is_array == 1){
+            auto civ = std::dynamic_pointer_cast<ConstInitValArrayAST>(ast.const_init_val());
+            if(civ->init_vals() == nullptr){
+                for(size_t i = 0; i < ste->_symbol_size/4 ; i++){
+                    temp_const_values.push_back(0);
+                }
+            }
+            else{
+                //In this case we have to deal with {val, {val,val},val,val,{val}}
+                //To-do
+
+            }
+        }
+        else{
+            auto val = ast.const_init_val()->Eval(*this);
+            if(!val) return LogError("Can not Evaluate the Initial Const Value!");
+            for(size_t i = 0; i < ste->_symbol_size/4 ; i++){
+                temp_const_values.push_back(*val);
+            }
+        }
+        if(_const_vars.find(ast.id())!=_const_vars.end()) return LogError("Const Array already been defined!");
+        for(size_t i = 0; i < ste->_symbol_size ; i+=4){
+            _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)), std::make_shared<IntVal>(temp_const_values.at(i/4)));
+        }
+        _const_vars.insert(std::make_pair<const std::string &, std::vector<int> >(ast.id(), std::move(temp_const_values)));
+        return nullptr;
     }
     else{
         //1. Generate on Variables
@@ -477,7 +519,7 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
             return LogError("symbol has already been defined");
         }
         //Insert Variable Declaration Instruction
-        _now_func->PushInst<DeclareVarInst>(slot);
+        _now_func->PushDeclInst<DeclareVarInst>(slot);
         //Create Entry in the Symbol Table
         auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT,1,0);
         _symbol_table->AddItem(ast.id(), std::move(ste));

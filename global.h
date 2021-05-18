@@ -68,6 +68,9 @@ public:
     //zero if this node is a variable, one if this node is a array;
     //-1 otherwise
     int is_array = -1;
+
+    int is_lval_array = -1;
+
 };
 using ASTPtr = std::shared_ptr<BaseAst>;
 using ASTPtrList = std::vector<ASTPtr>;
@@ -128,7 +131,7 @@ private:
 
 class ConstInitValArrayAST : public BaseAst{
 public:
-    ConstInitValArrayAST(ASTPtr init_vals): _init_vals(std::move(init_vals)){}
+    ConstInitValArrayAST(ASTPtr init_vals): _init_vals(std::move(init_vals)){is_array = 1;}
     std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &init_vals() const {return _init_vals;}
@@ -192,7 +195,7 @@ private:
 class InitValArrayAST : public BaseAst{
 public:
     InitValArrayAST(ASTPtr init_vals)
-    : _init_vals(std::move(init_vals)) {}
+    : _init_vals(std::move(init_vals)) {is_array = 1;}
     std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &init_vals() const {return _init_vals; }
@@ -449,7 +452,7 @@ private:
 class ArrayAST : public BaseAst {
 public:
     ArrayAST(const std::string &id, ASTPtr exprs)
-    : _id(id), _exprs(std::move(exprs)) {}
+    : _id(id), _exprs(std::move(exprs)) {is_lval_array = 1;}
     std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const std::string &id() const {return _id;}
