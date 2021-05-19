@@ -801,5 +801,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
 }
 //Todo: Modify BinaryAST and UnaryAST to take care of the situation where both sides
 //have arrays.
+//Todo: Problems in const defs. Maybe it should be nested.
+//A variable could only be declared once in any function.
 //Todo: Finish irgen.cpp to dump the Eeyore.s
 //Todo: Finish CompUnitAST to initialize the global environment.
