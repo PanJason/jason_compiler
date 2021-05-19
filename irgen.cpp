@@ -280,9 +280,15 @@ ValPtr IRGen::GenerateOn(const FuncCallAST& ast){
         if (!arg) return nullptr;
         args.push_back(std::move(arg));
     }
-    auto dest = _now_func->AddSlot();
-    _now_func->PushInst<FuncCallInst>(dest, it->second, std::move(args));
-    return dest;
+    if(it->second->ret_type()==yy::parser::token::TOK_INT){
+        auto dest = _now_func->AddSlot();
+        _now_func->PushInst<FuncCallInst>(dest, it->second, std::move(args));
+        return dest;
+    }
+    if(it->second->ret_type()==yy::parser::token::TOK_VOID){
+        _now_func->PushInst<VoidFuncCallInst>(it->second, std::move(args));
+        return nullptr;
+    }
 }
 
 ValPtr IRGen::GenerateOn(const ExpAST& ast){
@@ -555,7 +561,7 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         //Evaluate expr or {expr, expr, {expr, expr},{expr}}
         //To-do
         //Create slot
-        auto slot = _now_func->AddSlot();
+        auto slot = _now_func->AddVarSlot();
         //Add slot to _vars
         if (!_vars->AddItem(ast.id(), slot)) {
             return LogError("Array has already been defined");
@@ -606,7 +612,7 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         auto expr = ast.const_init_val()->Eval(*this);
         if (!expr) return LogError("Can not evaluate the Init Value of a const Variable");
         //Create slot
-        auto slot = _now_func->AddSlot();
+        auto slot = _now_func->AddVarSlot();
         //Add slot to _vars
         if (!_vars->AddItem(ast.id(), slot)) {
             return LogError("symbol has already been defined");
@@ -720,7 +726,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             //Evaluate expr or {expr, expr, {expr, expr},{expr}}
             //To-do
             //Create slot
-            auto slot = _now_func->AddSlot();
+            auto slot = _now_func->AddVarSlot();
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("Array has already been defined");
@@ -749,7 +755,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             //Evaluate expr or {expr, expr, {expr, expr},{expr}}
             //To-do
             //Create slot
-            auto slot = _now_func->AddSlot();
+            auto slot = _now_func->AddVarSlot();
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("Array has already been defined");
@@ -797,7 +803,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
         //1. Generate on Variables
         if (ast.init_val() == nullptr){
             //Create slot
-            auto slot = _now_func->AddSlot();
+            auto slot = _now_func->AddVarSlot();
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("symbol has already been defined");
@@ -813,7 +819,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             auto expr = ast.init_val()->GenerateIR(*this);
             if (!expr) return LogError("Can not Geneate the Init Value of a Variable");
             //Create slot
-            auto slot = _now_func->AddSlot();
+            auto slot = _now_func->AddVarSlot();
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("symbol has already been defined");
@@ -830,5 +836,33 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
     }
 
 }
-//Todo: Finish irgen.cpp to dump the Eeyore.s
 //Todo: Finish CompUnitAST to initialize the global environment.
+//Todo: How to deal with Global?
+ValPtr IRGen::GenerateOn(const CompUnitAST& ast){
+    _now_func = std::make_shared<FunctionDef>("00_GLOBAL",0, yy::parser::token_type::TOK_VOID);
+    if(!_funcs.insert({_now_func->func_name(), _now_func}).second){
+        return LogError("GLOBAL Environment has already been defined!");
+    }
+    //Create a function table
+    _func_table.insert(std::make_pair("00_GLOBAL",std::unordered_map<std::string, FTEPtr>()));
+    auto env = NewEnvironment();
+    auto sym = NewSymTable();
+    auto convars = NewConstVars();
+    for (const auto &i : ast.units()){
+        if(i->is_decl == 1){
+            i->GenerateIR(*this);
+            if(_error_num) return LogError("Error in this Declaration");
+        }
+    }
+    for (const auto &i : ast.units()){
+        if(i->is_decl != 1){
+            i->GenerateIR(*this);
+            if(_error_num) return LogError("Error in this Function Definition");
+        }
+    }
+    return nullptr;
+}
+
+void IRGen::Dump_Eeyore(std::ostream &os) const {
+  for (const auto &it : _funcs) it.second->Dump_Eeyore(os);
+}

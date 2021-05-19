@@ -12,16 +12,33 @@
 #include "global.h"
 #include "guard.h"
 #include "nested.h"
+#include "source.tab.hpp"
 
 class IRGen{
     public:
     IRGen() : _error_num(0){
         //register the lib functions
         //To do
+        //getint
+        _lib_funcs.insert({"getint",std::make_shared<FunctionDef>("getint", 0, yy::parser::token_type::TOK_INT)});
+        //getch
+        _lib_funcs.insert({"getch",std::make_shared<FunctionDef>("getch", 0, yy::parser::token_type::TOK_INT)});
+        //getarray
+        _lib_funcs.insert({"getarray",std::make_shared<FunctionDef>("getarray", 1, yy::parser::token_type::TOK_INT)});
+        //putint
+        _lib_funcs.insert({"putint",std::make_shared<FunctionDef>("putint", 1, yy::parser::token_type::TOK_VOID)});
+        //putchar
+        _lib_funcs.insert({"putch",std::make_shared<FunctionDef>("putch", 1, yy::parser::token_type::TOK_VOID)});
+        //putarray
+        _lib_funcs.insert({"putarray",std::make_shared<FunctionDef>("putarray", 2, yy::parser::token_type::TOK_VOID)});
+        //starttime
+        _lib_funcs.insert({"starttime",std::make_shared<FunctionDef>("starttime", 0, yy::parser::token_type::TOK_VOID)});
+        //stoptime
+        _lib_funcs.insert({"stoptime",std::make_shared<FunctionDef>("stoptime", 0, yy::parser::token_type::TOK_VOID)});
     }
 
     //dump eeyore representations
-    void Dump_Eeyore() const;
+    void Dump_Eeyore(std::ostream &os) const;
 
     //vistor methods here
     ValPtr GenerateOn(const CompUnitAST& ast);
