@@ -72,6 +72,8 @@ private:
     xstl::Guard NewLoopEnv();
     //The symbol Table inside a block;
     xstl::Guard NewSymTable();
+
+    xstl::Guard NewConstVars();
     
     //Continuously insert labesl into _now_func, which could be later translated easilly.
     FuncDefPtr _now_func;
@@ -87,6 +89,6 @@ private:
     std::unordered_map<std::string, std::unordered_map<std::string, FTEPtr> > _func_table;
 
     //This map is used to store the values of const variables and arrays.
-    std::unordered_map<std::string, std::vector<int> > _const_vars;
+    xstl::NestedMapPtr<std::string, std::vector<int> > _const_vars;
 };
 #endif

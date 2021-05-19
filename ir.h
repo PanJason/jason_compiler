@@ -26,6 +26,7 @@ class ValueBase {
 public:
     virtual ~ValueBase() = default;
     virtual void Dump_Eeyore() const = 0;
+    int is_array = -1;
 };
 using ValPtr = std::shared_ptr<ValueBase>;
 using ValPtrList = std::vector<ValPtr>;
@@ -176,7 +177,7 @@ private:
 class ArrayRefVal : public ValueBase{
 public:
     ArrayRefVal(ValPtr base, ValPtr offset)
-    : _base(base), _offset(std::move(offset)) {}
+    : _base(base), _offset(std::move(offset)) {is_array = 1;}
     void Dump_Eeyore() const override;
 private:
     ValPtr _base;

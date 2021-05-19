@@ -1,6 +1,7 @@
 #include "irgen.h"
 #include <iostream>
 #include <utility>
+#include <optional>
 #include "source.tab.hpp"
 
 ValPtr IRGen::LogError(std::string_view message){
@@ -26,19 +27,23 @@ xstl::Guard IRGen::NewSymTable(){
     _symbol_table = xstl::MakeNestedMap(_symbol_table);
     return xstl::Guard([this]{_symbol_table = _symbol_table->outer();});
 }
+xstl::Guard IRGen::NewConstVars(){
+    _const_vars = xstl::MakeNestedMap(_const_vars);
+    return xstl::Guard([this]{_const_vars = _const_vars->outer();});
+}
 
 std::optional<int> IRGen::EvalOn(const IntAST& ast){
     return ast.val();
 }
 std::optional<int> IRGen::EvalOn(const IdAST& ast)
 {
-    auto iter = _const_vars.find(ast.id());
-    if(iter == _const_vars.end()) assert("Not a const varible or evaluating unknown const variable");
-    return iter->second.front();
+    auto iter = _const_vars->GetItem(ast.id(),true);
+    //if(!!iter) assert("Not a const varible or evaluating unknown const variable");
+    return iter.front();
 }
 std::optional<int> IRGen::EvalOn(const ArrayAST& ast){
-    auto iter = _const_vars.find(ast.id());
-    if(iter == _const_vars.end()) assert("Not a const array or evaluating unknown const array element");
+    auto iter = _const_vars->GetItem(ast.id(),true);
+    //if(iter == _const_vars.end()) assert("Not a const array or evaluating unknown const array element");
     auto entry = _symbol_table->GetItem(ast.id(), true);
     if(!entry) assert("Array not defined yet!");
     auto dims = std::dynamic_pointer_cast<DimensionAST>(ast.exprs());
@@ -52,7 +57,7 @@ std::optional<int> IRGen::EvalOn(const ArrayAST& ast){
         offset += start * (*tmp);
     }
     assert(start == 1);
-    return iter->second.at(offset);
+    return iter.at(offset);
 }
 
 std::optional<int> IRGen::EvalOn(const BinaryAST& ast){
@@ -145,7 +150,31 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
         auto rhs = ast.rhs()->GenerateIR(*this);
         if(!lhs || !rhs) return nullptr;
         auto dest = _now_func->AddSlot();
-        _now_func->PushInst<BinaryInst>(ast.op(), dest, std::move(lhs), std::move(rhs));
+        if (lhs->is_array && rhs->is_array){
+            auto dest1 = _now_func->AddSlot();
+            _now_func->PushInst<AssignInst>(dest1, lhs);
+            auto dest2 = _now_func->AddSlot();
+            _now_func->PushInst<AssignInst>(dest2, rhs);
+            _now_func->PushInst<BinaryInst>(ast.op(), dest, dest1, dest2);
+        }
+        else{ 
+            if (lhs->is_array)
+            {
+                auto dest1 = _now_func->AddSlot();
+                _now_func->PushInst<AssignInst>(dest1, lhs);
+                _now_func->PushInst<BinaryInst>(ast.op(), dest, dest1, std::move(rhs));
+            }
+            else{
+                if (rhs->is_array){
+                    auto dest2 = _now_func->AddSlot();
+                    _now_func->PushInst<AssignInst>(dest2, rhs);
+                    _now_func->PushInst<BinaryInst>(ast.op(), dest, std::move(lhs), dest2);
+                }
+                else{
+                    _now_func->PushInst<BinaryInst>(ast.op(), dest, std::move(lhs), std::move(rhs));
+                }
+            }
+        }
         return dest;
     }
 }
@@ -343,6 +372,7 @@ ValPtr IRGen::GenerateOn(const BlockAST& ast){
     if (ast.blockitem() == nullptr) return nullptr;
     auto env = NewEnvironment();
     auto sym = NewSymTable();
+    auto convars = NewConstVars();
     ast.blockitem()->GenerateIR(*this);
     if(_error_num) return LogError("There is Error in this block!");
     return nullptr;
@@ -386,6 +416,7 @@ ValPtr IRGen::GenerateOn(const FuncDefAST& ast){
     //Insert the params to some function table
     auto env = NewEnvironment();
     auto sym = NewSymTable();
+    auto convars = NewConstVars();
     int p = 0;
     for(const auto &i : param_list->const_params()){
         if(i->is_array == 1)
@@ -563,11 +594,11 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
                 temp_const_values.push_back(*val);
             }
         }
-        if(_const_vars.find(ast.id())!=_const_vars.end()) return LogError("Const Array already been defined!");
+        //if(_const_vars.find(ast.id())!=_const_vars.end()) return LogError("Const Array already been defined!");
         for(size_t i = 0; i < ste->_symbol_size ; i+=4){
             _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)), std::make_shared<IntVal>(temp_const_values.at(i/4)));
         }
-        _const_vars.insert(std::make_pair<const std::string &, std::vector<int> >(ast.id(), std::move(temp_const_values)));
+        _const_vars->AddItem(ast.id(), std::move(temp_const_values));
         return nullptr;
     }
     else{
@@ -586,8 +617,8 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT,1,0);
         _symbol_table->AddItem(ast.id(), std::move(ste));
         //Evaluate and Store init value;
-        if(_const_vars.find(ast.id())!=_const_vars.end()) return LogError("Const Variable already been defined!");
-        _const_vars.insert(std::make_pair<const std::string &, std::vector<int> >(ast.id(), {*expr}));
+        //if(_const_vars->GetItem(ast.id())) return LogError("Const Variable already been defined!");
+        _const_vars->AddItem(ast.id(), {*expr});
         _now_func->PushInst<AssignInst>(std::move(slot), std::make_shared<IntVal>((*expr)));
         return nullptr;
     }
@@ -799,9 +830,5 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
     }
 
 }
-//Todo: Modify BinaryAST and UnaryAST to take care of the situation where both sides
-//have arrays.
-//Todo: Problems in const defs. Maybe it should be nested.
-//A variable could only be declared once in any function.
 //Todo: Finish irgen.cpp to dump the Eeyore.s
 //Todo: Finish CompUnitAST to initialize the global environment.
