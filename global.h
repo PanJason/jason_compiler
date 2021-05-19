@@ -81,7 +81,7 @@ class CompUnitAST : public BaseAst {
 public:
     CompUnitAST(ASTPtrList units)
     : _units(std::move(units)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtrList &units() const {return _units; }
     ASTPtrList _units;
@@ -91,7 +91,7 @@ class ConstDeclAST : public BaseAst{
 public:
     ConstDeclAST(const TokenType decl_type, ASTPtr const_defs)
     : _decl_type(decl_type), _const_defs(std::move(const_defs)) {is_decl = 1;}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const TokenType decl_type() const {return _decl_type; }
     const ASTPtr &const_defs() const {return _const_defs; }
@@ -104,7 +104,7 @@ class ConstDefListAST : public BaseAst{
 public:
     ConstDefListAST(ASTPtrList const_defs)
     : _const_defs(std::move(const_defs)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &const_defs() {return _const_defs;}
     const ASTPtrList &const_const_defs() const {return _const_defs;}
@@ -116,7 +116,7 @@ class ConstDefAST : public BaseAst{
 public:
     ConstDefAST(const std::string &id, ASTPtr const_exprs, ASTPtr const_init_val, bool is_array_def)
     : _id(id), _const_exprs(std::move(const_exprs)), _const_init_val(std::move(const_init_val)), _is_array_def(is_array_def) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const std::string &id() const {return _id;}
     const ASTPtr &const_exprs() const {return _const_exprs;}
@@ -132,8 +132,8 @@ private:
 class ConstInitValArrayAST : public BaseAst{
 public:
     ConstInitValArrayAST(ASTPtr init_vals): _init_vals(std::move(init_vals)){is_array = 1;}
-    std::optional<int> Eval(IRGen &gen) const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
+    //ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &init_vals() const {return _init_vals;}
 private:
     ASTPtr _init_vals;
@@ -143,8 +143,8 @@ class ConstInitValAST : public BaseAst{
 public:
     ConstInitValAST(ASTPtrList const_exprs)
     : _const_exprs(std::move(const_exprs)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
+    //ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &const_exprs()  {return _const_exprs; }
 private:
     ASTPtrList _const_exprs;
@@ -154,7 +154,7 @@ class VarDeclAST : public BaseAst{
 public:
     VarDeclAST(const TokenType decl_type, ASTPtr var_defs)
     : _decl_type(decl_type), _var_defs(std::move(var_defs)) {is_decl = 1;}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const TokenType decl_type() const {return _decl_type; }
     const ASTPtr &var_defs() const {return _var_defs; }
@@ -167,7 +167,7 @@ class VarDefListAST : public BaseAst{
 public:
     VarDefListAST(ASTPtrList var_defs)
     : _var_defs(std::move(var_defs)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &var_defs()  {return _var_defs; }
     const ASTPtrList &const_var_defs() const {return _var_defs;}
@@ -179,7 +179,7 @@ class VarDefAST : public BaseAst{
 public:
     VarDefAST(const std::string &id, ASTPtr const_exprs, ASTPtr init_val, bool is_array_def)
     : _id(id), _const_exprs(std::move(const_exprs)), _init_val(std::move(init_val)), _is_array_def(is_array_def) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const std::string &id() const {return _id;}
     const ASTPtr &const_exprs() const {return _const_exprs;}
@@ -196,8 +196,8 @@ class InitValArrayAST : public BaseAst{
 public:
     InitValArrayAST(ASTPtr init_vals)
     : _init_vals(std::move(init_vals)) {is_array = 1;}
-    std::optional<int> Eval(IRGen &gen) const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
+    //ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &init_vals() const {return _init_vals; }
 private:
     ASTPtr _init_vals;
@@ -207,8 +207,8 @@ class InitValAST : public BaseAst{
 public:
     InitValAST(ASTPtrList exprs)
     : _exprs(std::move(exprs)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
+    //ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &exprs()  {return _exprs; }
 private:
     ASTPtrList _exprs;
@@ -220,7 +220,7 @@ class FuncDefAST : public BaseAst{
 public:
     FuncDefAST(const TokenType func_type, const std::string &name, ASTPtr params, ASTPtr block) 
     : _func_type(func_type), _name(name), _params(std::move(params)), _block(std::move(block)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const TokenType func_type() const {return _func_type;}
     const std::string &name() const {return _name;}
@@ -277,8 +277,8 @@ class DimensionAST : public BaseAst {
 public:
     DimensionAST(ASTPtrList dims)
     : _dims(std::move(dims)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
-    ValPtr GenerateIR(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
+    //ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &dims() {return _dims; }
     const ASTPtrList &const_dims() const {return _dims; }
 private:
@@ -289,7 +289,7 @@ class BlockAST : public BaseAst {
 public:
     BlockAST(ASTPtr blockitems)
     : _blockitems(std::move(blockitems)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &blockitem() const {return _blockitems; }
 private:
@@ -300,7 +300,7 @@ class BlockItemsAST : public BaseAst {
 public:
     BlockItemsAST(ASTPtrList items)
     : _items(std::move(items)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     ASTPtrList &items() {return _items;}
     const ASTPtrList &const_items() const {return _items;}
@@ -312,7 +312,7 @@ class AssignAST : public BaseAst {
 public:
     AssignAST(ASTPtr lval, ASTPtr expr)
     : _lval(std::move(lval)), _expr(std::move(expr)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &lval() const {return _lval; }
     const ASTPtr &expr() const {return _expr; }
@@ -325,7 +325,7 @@ class ExpAST : public BaseAst {
 public:
     ExpAST(ASTPtr expr)
     : _expr(std::move(expr)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &expr() const {return _expr; }
 private:
@@ -336,7 +336,7 @@ class IfAST : public BaseAst {
 public:
     IfAST(ASTPtr cond, ASTPtr then, ASTPtr else_then)
     : _cond(std::move(cond)), _then(std::move(then)), _else_then(std::move(else_then)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &cond() const {return _cond; }
     const ASTPtr &then() const {return _then; }
@@ -349,7 +349,7 @@ class WhileAST : public BaseAst {
 public:
     WhileAST(ASTPtr cond, ASTPtr stmt)
     : _cond(std::move(cond)), _stmt(std::move(cond)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &cond() const {return _cond; }
     const ASTPtr &stmt() const {return _stmt; }
@@ -360,7 +360,7 @@ private:
 class CondAST : public BaseAst {
 public:
     CondAST(const TokenType cond_type) : _cond_type(cond_type) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const TokenType cond_type() const {return _cond_type; }
 private:
@@ -370,7 +370,7 @@ private:
 class ReturnAST : public BaseAst {
 public:
     ReturnAST(ASTPtr expr) : _expr(std::move(expr)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &expr() const {return _expr; }
 private:
@@ -408,7 +408,7 @@ class FuncCallAST : public BaseAst {
 public:
     FuncCallAST(const std::string &name, ASTPtr params)
     : _name(name), _params(std::move(params)) {}
-    std::optional<int> Eval(IRGen &gen) const override;
+    //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const std::string &name() const {return _name; }
     const ASTPtr &params() const {return _params; }
