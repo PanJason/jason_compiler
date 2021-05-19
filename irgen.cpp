@@ -155,8 +155,8 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
 //Could not generate index only using dimension
 //Should change ConstDefAST and ValDefAST
 //This function should not be called directly 
-ValPtr IRGen::GenerateOn(const DimensionAST& ast){
-    return LogError("The Generate Dimension Function should not be called directly.!");
+//ValPtr IRGen::GenerateOn(const DimensionAST& ast){
+//    return LogError("The Generate Dimension Function should not be called directly.!");
     /*
     ValPtr old_dest = nullptr;
     for(auto &i : ast.const_dims()){
@@ -173,7 +173,7 @@ ValPtr IRGen::GenerateOn(const DimensionAST& ast){
     }
     return old_dest;
     */
-}
+//}
 
 
 //ID Dim 
@@ -803,4 +803,4 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
 //have arrays.
 //Todo: Finish Eval and GenerateIR in global.cpp
 //Todo: Finish irgen.cpp to dump the Eeyore.s
-//Todo: define a new InstPtrList just for Declarations
+//Todo: Finish CompUnitAST to initialize the global environment.
