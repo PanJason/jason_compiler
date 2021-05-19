@@ -448,6 +448,76 @@ ValPtr IRGen::GenerateOn(const ConstDefListAST& ast){
 //Store Values
 //Generate Declaration
 //Generate Assignment
+ValPtr IRGen::process_value(std::shared_ptr<ConstInitValArrayAST> ast, std::vector<std::size_t>& shape, std::size_t dim, std::vector<int>& result){
+    if(ast->init_vals() == nullptr){
+        std::size_t total = 1;
+        for (auto ii : shape){
+            total *= ii;
+        }
+        for(std::size_t ii = 0; ii < total ; ii++){
+            result.push_back(0);
+        }
+        return nullptr;
+    }
+    auto values = std::dynamic_pointer_cast<ConstInitValAST>(ast->init_vals());
+    std::vector<std::size_t> position;
+    //Start from all zeros;
+    for(std::size_t i = 0; i < dim; i++){
+        position.push_back(0);
+    }
+    
+    for(const auto &i: values->const_exprs()){
+        if(i->is_array){
+            // Is a ConstInitValArrayAST
+            auto sub_ast = std::dynamic_pointer_cast<ConstInitValArrayAST>(i);
+            auto back = dim - 1;
+            while (position.at(back) == 0 && back >= 1){
+                back -=1;
+            }
+            std::vector<std::size_t> sub_shape;
+            for (std::size_t ii = back + 1; ii < dim ;ii++){
+                sub_shape.push_back(shape.at(ii));
+            }
+            process_value(sub_ast, sub_shape, dim - 1 - back, result);
+            position.at(back) += 1;
+            while (position.at(back) == shape.at(back) && back >=1 )
+            {
+                position.at(back) = 0;
+                position.at(back-1) += 1;
+                back -= 1;
+            }
+        }
+        else{
+            auto expr = i->Eval(*this);
+            if (!expr) return LogError("Can not evaluate the Init Value of a const Variable");
+            result.push_back(*expr);
+            position.at(dim-1) += 1;
+            auto back = dim -1;
+            while (position.at(back) == shape.at(back) && back >=1 )
+            {
+                position.at(back) = 0;
+                position.at(back-1) += 1;
+                back -= 1;
+            }
+            
+        }
+    }
+    //Padding With Zeros.
+    while (position.at(0)!=shape.at(0))
+    {
+        result.push_back(0);
+        position.at(dim - 1) +=1;
+        auto back = dim -1;
+        while (position.at(back) == shape.at(back) && back >=1 )
+        {
+            position.at(back) = 0;
+            position.at(back-1) += 1;
+            back -= 1;
+        }
+    }
+    
+    return nullptr;
+}
 ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
     if(ast.is_array_def()){
         //2. Generate on Arrays
@@ -482,17 +552,9 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         //First have to check _const_init_value points to a single expression or 
         //ConstInitValArray
         if (ast.const_init_val()->is_array == 1){
-            auto civ = std::dynamic_pointer_cast<ConstInitValArrayAST>(ast.const_init_val());
-            if(civ->init_vals() == nullptr){
-                for(size_t i = 0; i < ste->_symbol_size/4 ; i++){
-                    temp_const_values.push_back(0);
-                }
-            }
-            else{
-                //In this case we have to deal with {val, {val,val},val,val,{val}}
-                //To-do
+            process_value(std::dynamic_pointer_cast<ConstInitValArrayAST>(ast.const_init_val()),ste->_shape,ste->_dim, temp_const_values);
+            assert(temp_const_values.size() == ste->_symbol_size /4);
 
-            }
         }
         else{
             auto val = ast.const_init_val()->Eval(*this);
@@ -550,11 +612,194 @@ ValPtr IRGen::GenerateOn(const VarDefListAST& ast){
     if(_error_num) return LogError("Error in Var Definitions!");
     return nullptr;
 }
+ValPtr IRGen::process_slot(std::shared_ptr<InitValArrayAST> ast, std::vector<std::size_t>& shape, std::size_t dim, ValPtrList& result){
+    if(ast->init_vals() == nullptr){
+        std::size_t total = 1;
+        for (auto ii : shape){
+            total *= ii;
+        }
+        for(std::size_t ii = 0; ii < total ; ii++){
+            result.push_back(std::make_shared<IntVal>(0));
+        }
+        return nullptr;
+    }
+    auto values = std::dynamic_pointer_cast<InitValAST>(ast->init_vals());
+    std::vector<std::size_t> position;
+    //Start from all zeros;
+    for(std::size_t i = 0; i < dim; i++){
+        position.push_back(0);
+    }
+    
+    for(const auto &i: values->exprs()){
+        if(i->is_array){
+            // Is a ConstInitValArrayAST
+            auto sub_ast = std::dynamic_pointer_cast<InitValArrayAST>(i);
+            auto back = dim - 1;
+            while (position.at(back) == 0 && back >= 1){
+                back -=1;
+            }
+            std::vector<std::size_t> sub_shape;
+            for (std::size_t ii = back + 1; ii < dim ;ii++){
+                sub_shape.push_back(shape.at(ii));
+            }
+            process_slot(sub_ast, sub_shape, dim - 1 - back, result);
+            position.at(back) += 1;
+            while (position.at(back) == shape.at(back) && back >=1 )
+            {
+                position.at(back) = 0;
+                position.at(back-1) += 1;
+                back -= 1;
+            }
+        }
+        else{
+            auto expr = i->GenerateIR(*this);
+            if (!expr) return LogError("Can not evaluate the Init Value of a const Variable");
+            result.push_back(expr);
+            position.at(dim-1) += 1;
+            auto back = dim -1;
+            while (position.at(back) == shape.at(back) && back >=1 )
+            {
+                position.at(back) = 0;
+                position.at(back-1) += 1;
+                back -= 1;
+            }
+            
+        }
+    }
+    //Padding With Zeros.
+    while (position.at(0)!=shape.at(0))
+    {
+        result.push_back(std::make_shared<IntVal>(0));
+        position.at(dim - 1) +=1;
+        auto back = dim -1;
+        while (position.at(back) == shape.at(back) && back >=1 )
+        {
+            position.at(back) = 0;
+            position.at(back-1) += 1;
+            back -= 1;
+        }
+    }
+    return nullptr;
+}
+
 ValPtr IRGen::GenerateOn(const VarDefAST& ast){
+    if(ast.is_array_def()){
+        if (ast.init_val() == nullptr){
+            //2. Generate on Arrays
+            //Evaluate expr or {expr, expr, {expr, expr},{expr}}
+            //To-do
+            //Create slot
+            auto slot = _now_func->AddSlot();
+            //Add slot to _vars
+            if (!_vars->AddItem(ast.id(), slot)) {
+                return LogError("Array has already been defined");
+            }
+            //Evaluate each dimension
+            std::vector<std::optional<int> > dim_list;
+            auto dim_exprs = std::dynamic_pointer_cast<DimensionAST>(ast.const_exprs());
+            for(const auto &i : dim_exprs->const_dims()){
+                auto expr = i->Eval(*this);
+                if(!expr) return LogError("Can not Evaluate the Dimension of the const Array");
+                dim_list.push_back(std::move(expr));
+            }
+            //Create Entry in the Symbol Table
+            auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT, 0, 1);
+            ste->_dim = dim_list.size();
+            for(const auto &i: dim_list){
+                ste->_symbol_size *= (*i);
+                ste->_shape.push_back(*i);
+            }
+            //Insert Array Declaration Instruction
+            _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
+            _symbol_table->AddItem(ast.id(), ste);
+        }
+        else{
+            //2. Generate on Arrays
+            //Evaluate expr or {expr, expr, {expr, expr},{expr}}
+            //To-do
+            //Create slot
+            auto slot = _now_func->AddSlot();
+            //Add slot to _vars
+            if (!_vars->AddItem(ast.id(), slot)) {
+                return LogError("Array has already been defined");
+            }
+            //Evaluate each dimension
+            std::vector<std::optional<int> > dim_list;
+            auto dim_exprs = std::dynamic_pointer_cast<DimensionAST>(ast.const_exprs());
+            for(const auto &i : dim_exprs->const_dims()){
+                auto expr = i->Eval(*this);
+                if(!expr) return LogError("Can not Evaluate the Dimension of the const Array");
+                dim_list.push_back(std::move(expr));
+            }
+            //Create Entry in the Symbol Table
+            auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT, 0, 1);
+            ste->_dim = dim_list.size();
+            for(const auto &i: dim_list){
+                ste->_symbol_size *= (*i);
+                ste->_shape.push_back(*i);
+            }
+            //Insert Array Declaration Instruction
+            _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
+            _symbol_table->AddItem(ast.id(), ste);
+            //Store the value
+            ValPtrList temp_values;
+            //First have to check _const_init_value points to a single expression or 
+            //ConstInitValArray
+            if (ast.init_val()->is_array == 1){
+                process_slot(std::dynamic_pointer_cast<InitValArrayAST>(ast.init_val()),ste->_shape,ste->_dim, temp_values);
+                assert(temp_values.size() == ste->_symbol_size /4);
+            }
+            else{
+                auto val = ast.init_val()->GenerateIR(*this);
+                if(!val) return LogError("Can not Generate Slot for the Initial Value!");
+                for(size_t i = 0; i < ste->_symbol_size/4 ; i++){
+                    temp_values.push_back(val);
+                }
+            }
+            for(size_t i = 0; i < ste->_symbol_size ; i+=4){
+                _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)), temp_values.at(i/4));
+            }
+            return nullptr;
+        }
+    }
+    else{
+        //1. Generate on Variables
+        if (ast.init_val() == nullptr){
+            //Create slot
+            auto slot = _now_func->AddSlot();
+            //Add slot to _vars
+            if (!_vars->AddItem(ast.id(), slot)) {
+                return LogError("symbol has already been defined");
+            }
+            //Insert Variable Declaration Instruction
+            _now_func->PushDeclInst<DeclareVarInst>(slot);
+            //Create Entry in the Symbol Table
+            auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT,0,0);
+            _symbol_table->AddItem(ast.id(), std::move(ste));
+            return nullptr;
+        }
+        else{
+            auto expr = ast.init_val()->GenerateIR(*this);
+            if (!expr) return LogError("Can not Geneate the Init Value of a Variable");
+            //Create slot
+            auto slot = _now_func->AddSlot();
+            //Add slot to _vars
+            if (!_vars->AddItem(ast.id(), slot)) {
+                return LogError("symbol has already been defined");
+            }
+            //Insert Variable Declaration Instruction
+            _now_func->PushDeclInst<DeclareVarInst>(slot);
+            //Create Entry in the Symbol Table
+            auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT,0,0);
+            _symbol_table->AddItem(ast.id(), std::move(ste));
+            //Generate Assign Expression;
+            _now_func->PushInst<AssignInst>(std::move(slot), std::move(expr));
+            return nullptr;
+        }
+    }
 
 }
-//Todo: ConstDefAST, VarDefAST;
-//Todo: Finish ConstDefAST, VarDefAST
+
 //Todo: Finish Eval and GenerateIR in global.cpp
 //Todo: Finish irgen.cpp to dump the Eeyore.s
 //Todo: define a new InstPtrList just for Declarations
