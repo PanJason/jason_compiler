@@ -244,7 +244,15 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
             start = start/entry->shape().at(i);
             auto tmp = dims->const_dims().at(i)->GenerateIR(*this);
             if(!tmp) assert("Fail to evaluate a dimension!");
-            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::make_shared<IntVal>(start));
+            if(tmp->is_array ==1){
+                auto dest2 = _now_func->AddSlot();
+                _now_func->PushDeclInst<DeclareVarInst>(dest2);
+                _now_func->PushInst<AssignInst>(dest2, std::move(tmp));
+                _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(dest2), std::make_shared<IntVal>(start));
+            }
+            else{
+                _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::make_shared<IntVal>(start));
+            } 
             _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, middle);
         }
         assert(start == 1);
@@ -262,14 +270,30 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
         for (std::size_t i = 0; i < func_table_entry->second->dim()-1; i++){
             auto tmp = dims->const_dims().at(i)->GenerateIR(*this);
             if(!tmp) assert("Fail to evaluate a dimension!");
-            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::make_shared<IntVal>(start));
+            if(tmp->is_array ==1){
+                auto dest2 = _now_func->AddSlot();
+                _now_func->PushDeclInst<DeclareVarInst>(dest2);
+                _now_func->PushInst<AssignInst>(dest2, std::move(tmp));
+                _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(dest2), std::make_shared<IntVal>(start));
+            }
+            else{
+                _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::make_shared<IntVal>(start));
+            }
             _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, middle);
             start = start/func_table_entry->second->shape().at(i);
         }
         assert(start == 1);
         auto tmp = dims->const_dims().at(func_table_entry->second->dim()-1)->GenerateIR(*this);
         if(!tmp) assert("Fail to evaluate a dimension!");
-        _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, std::move(tmp));
+        if(tmp->is_array ==1){
+            auto dest3 = _now_func->AddSlot();
+            _now_func->PushDeclInst<DeclareVarInst>(dest3);
+            _now_func->PushInst<AssignInst>(dest3, std::move(tmp));
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, std::move(dest3));
+        }
+        else{
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, std::move(tmp));
+        }
     }
     _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, dest, dest, std::make_shared<IntVal>(4));
     return std::make_shared<ArrayRefVal>(base, dest);
