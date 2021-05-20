@@ -38,12 +38,12 @@ std::optional<int> IRGen::EvalOn(const IntAST& ast){
 std::optional<int> IRGen::EvalOn(const IdAST& ast)
 {
     auto iter = _const_vars->GetItem(ast.id(),true);
-    //if(!!iter) assert("Not a const varible or evaluating unknown const variable");
-    return iter.front();
+    if(iter == nullptr) assert("Not a const varible or evaluating unknown const variable");
+    return iter->front();
 }
 std::optional<int> IRGen::EvalOn(const ArrayAST& ast){
     auto iter = _const_vars->GetItem(ast.id(),true);
-    //if(iter == _const_vars.end()) assert("Not a const array or evaluating unknown const array element");
+    if(iter == nullptr) assert("Not a const array or evaluating unknown const array element");
     auto entry = _symbol_table->GetItem(ast.id(), true);
     if(!entry) assert("Array not defined yet!");
     auto dims = std::dynamic_pointer_cast<DimensionAST>(ast.exprs());
@@ -57,7 +57,7 @@ std::optional<int> IRGen::EvalOn(const ArrayAST& ast){
         offset += start * (*tmp);
     }
     assert(start == 1);
-    return iter.at(offset);
+    return iter->at(offset);
 }
 
 std::optional<int> IRGen::EvalOn(const BinaryAST& ast){
@@ -261,6 +261,7 @@ ValPtr IRGen::GenerateOn(const ReturnAST& ast){
     auto expr = ast.expr()->GenerateIR(*this);
     if(!expr) return nullptr;
     _now_func->PushInst<ReturnInst>(std::move(expr));
+    return nullptr;
 }
 
 ValPtr IRGen::GenerateOn(const FuncCallAST& ast){
@@ -289,6 +290,7 @@ ValPtr IRGen::GenerateOn(const FuncCallAST& ast){
         _now_func->PushInst<VoidFuncCallInst>(it->second, std::move(args));
         return nullptr;
     }
+    return LogError("Unknown Function Return Type");
 }
 
 ValPtr IRGen::GenerateOn(const ExpAST& ast){
@@ -600,11 +602,11 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
                 temp_const_values.push_back(*val);
             }
         }
-        //if(_const_vars.find(ast.id())!=_const_vars.end()) return LogError("Const Array already been defined!");
+        if(_const_vars->GetItem(ast.id())) return LogError("Const Array already been defined!");
         for(size_t i = 0; i < ste->_symbol_size ; i+=4){
             _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)), std::make_shared<IntVal>(temp_const_values.at(i/4)));
         }
-        _const_vars->AddItem(ast.id(), std::move(temp_const_values));
+        _const_vars->AddItem(ast.id(), std::make_shared<std::vector<int> >(temp_const_values));
         return nullptr;
     }
     else{
@@ -623,8 +625,8 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT,1,0);
         _symbol_table->AddItem(ast.id(), std::move(ste));
         //Evaluate and Store init value;
-        //if(_const_vars->GetItem(ast.id())) return LogError("Const Variable already been defined!");
-        _const_vars->AddItem(ast.id(), {*expr});
+        if(_const_vars->GetItem(ast.id())) return LogError("Const Variable already been defined!");
+        _const_vars->AddItem(ast.id(), std::make_shared<std::vector<int> >(*expr));
         _now_func->PushInst<AssignInst>(std::move(slot), std::make_shared<IntVal>((*expr)));
         return nullptr;
     }
@@ -749,6 +751,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             //Insert Array Declaration Instruction
             _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
             _symbol_table->AddItem(ast.id(), ste);
+            return nullptr;
         }
         else{
             //2. Generate on Arrays

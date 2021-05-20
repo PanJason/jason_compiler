@@ -15,6 +15,7 @@
     #include <cstdlib>
 %}
 %option debug noinput
+%option noyywrap
 /*
 %{
     yy::parser::symbol_type
@@ -82,13 +83,15 @@ newline         \n
 "||"            {return yy::parser::make_OR(loc);}
 {whitespace}    { loc.step (); }
 {newline}       { loc.lines (yyleng); loc.step (); }
+"//"[^\n]*\n    { loc.lines (yyleng); loc.step (); }
+"/*"([^*]|\*+[^/*])*"*/"  { loc.lines (yyleng); loc.step (); }
 {oct_num}       {
     errno = 0;
     long n = strtol(yytext, NULL, 8);
     if (! (INT_MIN <= n && n <= INT_MAX && errno != ERANGE))
     throw yy::parser::syntax_error (loc, "integer is out of range: "
                                     + std::string(yytext));
-  return yy::parser::make_NUMBER (n, loc);
+  return yy::parser::make_OCT_NUM (n, loc);
 
 }
 {dec_num}       {
@@ -97,7 +100,7 @@ newline         \n
     if (! (INT_MIN <= n && n <= INT_MAX && errno != ERANGE))
     throw yy::parser::syntax_error (loc, "integer is out of range: "
                                     + std::string(yytext));
-  return yy::parser::make_NUMBER (n, loc);
+  return yy::parser::make_DEC_NUM (n, loc);
 }
 {hex_num}       {
     errno = 0;
@@ -105,34 +108,12 @@ newline         \n
     if (! (INT_MIN <= n && n <= INT_MAX && errno != ERANGE))
     throw yy::parser::syntax_error (loc, "integer is out of range: "
                                     + std::string(yytext));
-  return yy::parser::make_NUMBER (n, loc);
+  return yy::parser::make_HEX_NUM (n, loc);
 }
 {identifier}    {
-    return yy::parser::make_IDENTIFIER (yytext, loc);
+    return yy::parser::make_ID (yytext, loc);
 }
-"//"            {char c;
-                do { 
-                    c=input();
-                    if (c == EOF) return yy:parser::make_END(loc);
-                    if (c == '\n') loc.lines(yyleng);
-                } while (c != '\n');
-                loc.step();
-                }
-"/*"            {char c; bool outside = 0;
-                do {
-                    c=input();
-                    if (c == EOF) return yy:parser::make_END(loc);
-                    if (c == '\n') loc.lines(yyleng);
-                    while (c == '*'){ 
-                        c = input();
 
-                        if (c == EOF) return yy:parser::make_END(loc);
-                        if (c == '\n') loc.lines(yyleng);
-                        if (c == '/') { outside = 1; break;}
-                    }
-                } while ( c!= EOF && !outside);
-                loc.step();
-                }
 .               {
      throw yy::parser::syntax_error
                (loc, "invalid character: " + std::string(yytext));

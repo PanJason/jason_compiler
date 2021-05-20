@@ -14,6 +14,9 @@
 #include <stdexcept>
 #include "ir.h"
 
+using TokenType = int;
+class IRGen;
+
 class SymbolTableEntry{
 public:
     SymbolTableEntry(TokenType symbol_type, bool is_const, 
@@ -75,7 +78,7 @@ public:
 using ASTPtr = std::shared_ptr<BaseAst>;
 using ASTPtrList = std::vector<ASTPtr>;
 using IdList = std::vector<std::string>;
-using TokenType = int;
+
 
 class CompUnitAST : public BaseAst {
 public:

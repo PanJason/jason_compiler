@@ -8,12 +8,13 @@
 /****************************************************/
 #ifndef __IRGEN_H
 #define __IRGEN_H
+#include <memory>
 #include "ir.h"
 #include "global.h"
 #include "guard.h"
 #include "nested.h"
 #include "source.tab.hpp"
-
+using ConVarPTR = std::shared_ptr<std::vector<int> >;
 class IRGen{
     public:
     IRGen() : _error_num(0){
@@ -106,6 +107,6 @@ private:
     std::unordered_map<std::string, std::unordered_map<std::string, FTEPtr> > _func_table;
 
     //This map is used to store the values of const variables and arrays.
-    xstl::NestedMapPtr<std::string, std::vector<int> > _const_vars;
+    xstl::NestedMapPtr<std::string, ConVarPTR > _const_vars;
 };
 #endif

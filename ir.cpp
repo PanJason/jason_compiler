@@ -9,6 +9,9 @@
 std::size_t LabelVal::_next_id = 0;
 std::size_t VarSlotVal::_next_id = 0;
 
+ValPtr FunctionDef::AddSlot() {return std::make_shared<SlotVal>(_slot_num++);}
+ValPtr FunctionDef::AddVarSlot() {return std::make_shared<VarSlotVal>();}
+
 void FunctionDef::Dump_Eeyore(std::ostream &os) const {
     os<<"f_"<<_func_name<<" ["<<_num_args<<"]"<<std::endl;
     for (const auto &decl : _decl_insts) decl->Dump_Eeyore(os, *this);

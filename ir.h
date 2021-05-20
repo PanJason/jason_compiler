@@ -12,6 +12,8 @@
 #include <vector>
 #include <iostream>
 
+using TokenType = int;
+class FunctionDef;
 // Base class of all instructions
 class InstBase{
 public:
@@ -40,19 +42,17 @@ FunctionDef(const std::string &name, std::size_t num_args, TokenType ret_type)
 template <typename Inst, typename... Args>
 void PushInst(Args &&...args){
     _insts.emplace_back(
-        std::make_shared<Inst>(std::forward<Args>(args)...);
-    );
+        std::make_shared<Inst>(std::forward<Args>(args)...));
 }
 
 template <typename Inst, typename... Args>
 void PushDeclInst(Args &&...args){
     _decl_insts.emplace_back(
-        std::make_shared<Inst>(std::forward<Args>(args)...);
-    );
+        std::make_shared<Inst>(std::forward<Args>(args)...));
 }
 
-ValPtr AddSlot() {return std::make_shared<SlotVal>(_slot_num++);}
-ValPtr AddVarSlot() {return std::make_shared<VarSlotVal>();}
+ValPtr AddSlot();
+ValPtr AddVarSlot();
 void Dump_Eeyore(std::ostream& os) const;
 const std::string &func_name() const {return _func_name;}
 std::size_t num_args() const {return _num_args;}
@@ -181,7 +181,7 @@ private:
 
 class VarSlotVal: public ValueBase{
 public:
-    VarSlotVal(std::size_t id) : _id(_next_id++) {}
+    VarSlotVal() : _id(_next_id++) {}
     void Dump_Eeyore(std::ostream &os) const override;
 private:
     static std::size_t _next_id;
