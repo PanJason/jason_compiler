@@ -34,3 +34,7 @@
 .vscode/
 *.S
 core
+
+lex.yy.cpp
+source.tab.cpp
+source.tab.hpp
