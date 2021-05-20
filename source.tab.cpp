@@ -938,7 +938,7 @@ namespace yy {
 #line 95 "source.y"
                                     {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value.as < ASTPtr > ());
-    yylhs.value.as < ASTPtr > () = std::make_shared<ConstDefAST>(p_IdAST->id(), nullptr, std::move(yystack_[0].value.as < ASTPtr > ()));
+    yylhs.value.as < ASTPtr > () = std::make_shared<ConstDefAST>(p_IdAST->id(), nullptr, std::move(yystack_[0].value.as < ASTPtr > ()), 0);
 }
 #line 944 "source.tab.cpp"
     break;
@@ -947,7 +947,7 @@ namespace yy {
 #line 99 "source.y"
                                               {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value.as < ASTPtr > ());
-    yylhs.value.as < ASTPtr > () = std::make_shared<ConstDefAST>(p_IdAST->id(), std::move(yystack_[2].value.as < ASTPtr > ()), std::move(yystack_[0].value.as < ASTPtr > ()));
+    yylhs.value.as < ASTPtr > () = std::make_shared<ConstDefAST>(p_IdAST->id(), std::move(yystack_[2].value.as < ASTPtr > ()), std::move(yystack_[0].value.as < ASTPtr > ()), 1);
 }
 #line 953 "source.tab.cpp"
     break;
@@ -1052,7 +1052,7 @@ namespace yy {
 #line 161 "source.y"
                     {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[0].value.as < ASTPtr > ());
-    yylhs.value.as < ASTPtr > () = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, nullptr);
+    yylhs.value.as < ASTPtr > () = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, nullptr, 0);
 }
 #line 1058 "source.tab.cpp"
     break;
@@ -1061,7 +1061,7 @@ namespace yy {
 #line 165 "source.y"
                                {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[2].value.as < ASTPtr > ());
-    yylhs.value.as < ASTPtr > () = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, std::move(yystack_[0].value.as < ASTPtr > ()));
+    yylhs.value.as < ASTPtr > () = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, std::move(yystack_[0].value.as < ASTPtr > ()), 0);
 }
 #line 1067 "source.tab.cpp"
     break;
@@ -1070,7 +1070,7 @@ namespace yy {
 #line 169 "source.y"
                               {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[1].value.as < ASTPtr > ());
-    yylhs.value.as < ASTPtr > () = std::make_shared<VarDefAST>(p_IdAST->id(), std::move(yystack_[0].value.as < ASTPtr > ()), nullptr);
+    yylhs.value.as < ASTPtr > () = std::make_shared<VarDefAST>(p_IdAST->id(), std::move(yystack_[0].value.as < ASTPtr > ()), nullptr, 1);
 }
 #line 1076 "source.tab.cpp"
     break;
@@ -1079,7 +1079,7 @@ namespace yy {
 #line 173 "source.y"
                                          {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>(yystack_[3].value.as < ASTPtr > ());
-    yylhs.value.as < ASTPtr > () = std::make_shared<VarDefAST>(p_IdAST->id(), std::move(yystack_[2].value.as < ASTPtr > ()), std::move(yystack_[0].value.as < ASTPtr > ()));
+    yylhs.value.as < ASTPtr > () = std::make_shared<VarDefAST>(p_IdAST->id(), std::move(yystack_[2].value.as < ASTPtr > ()), std::move(yystack_[0].value.as < ASTPtr > ()), 1);
 }
 #line 1085 "source.tab.cpp"
     break;
