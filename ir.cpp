@@ -6,6 +6,8 @@
 /****************************************************/
 #include "ir.h"
 #include "source.tab.hpp"
+#define __DEBUG_IR__
+
 std::size_t LabelVal::_next_id = 0;
 std::size_t VarSlotVal::_next_id = 0;
 
@@ -78,7 +80,8 @@ void VoidFuncCallInst::Dump_Eeyore(std::ostream &os, const FunctionDef &func) co
 }
 void ReturnInst::Dump_Eeyore(std::ostream &os, const FunctionDef &func) const{
     os<<"return ";
-    _val->Dump_Eeyore(os);
+    if (_val!=nullptr)
+        _val->Dump_Eeyore(os);
     os<<std::endl;
 }
 void BinaryInst::Dump_Eeyore(std::ostream &os, const FunctionDef &func) const{

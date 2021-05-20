@@ -351,7 +351,7 @@ private:
 class WhileAST : public BaseAst {
 public:
     WhileAST(ASTPtr cond, ASTPtr stmt)
-    : _cond(std::move(cond)), _stmt(std::move(cond)) {}
+    : _cond(std::move(cond)), _stmt(std::move(stmt)) {}
     //std::optional<int> Eval(IRGen &gen) const override;
     ValPtr GenerateIR(IRGen &gen) const override;
     const ASTPtr &cond() const {return _cond; }

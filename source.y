@@ -94,11 +94,11 @@ ConstDefList : ConstDef {
 }
             ;
 
-ConstDef    : IDENT EQ ConstInitVal {
+ConstDef    : IDENT ASSIGN ConstInitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
     $$ = std::make_shared<ConstDefAST>(p_IdAST->id(), nullptr, std::move($3), 0);
 }
-            | IDENT Dimension EQ ConstInitVal {
+            | IDENT Dimension ASSIGN ConstInitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
     $$ = std::make_shared<ConstDefAST>(p_IdAST->id(), std::move($2), std::move($4), 1);
 }
@@ -164,7 +164,7 @@ VarDef      : IDENT {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
     $$ = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, nullptr, 0);
 }
-            | IDENT EQ InitVal {
+            | IDENT ASSIGN InitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
     $$ = std::make_shared<VarDefAST>(p_IdAST->id(), nullptr, std::move($3), 0);
 }
@@ -172,7 +172,7 @@ VarDef      : IDENT {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
     $$ = std::make_shared<VarDefAST>(p_IdAST->id(), std::move($2), nullptr, 1);
 }
-            | IDENT Dimension EQ InitVal {
+            | IDENT Dimension ASSIGN InitVal {
     auto p_IdAST = std::dynamic_pointer_cast<IdAST>($1);
     $$ = std::make_shared<VarDefAST>(p_IdAST->id(), std::move($2), std::move($4), 1);
 }
@@ -290,7 +290,7 @@ Stmt        : Block { $$ = $1; }
             | Return_stmt { $$ = $1; }
             ;
 
-Assign_stmt : LVal EQ Exp SEMI {
+Assign_stmt : LVal ASSIGN Exp SEMI {
     $$ = std::make_shared<AssignAST>(std::move($1), std::move($3));
 }
             ;

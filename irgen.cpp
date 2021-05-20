@@ -5,6 +5,12 @@
 #include "source.tab.hpp"
 #define __DEBUG_IRGEN__
 
+#ifdef __DEBUG_IRGEN__
+#define pr_debug(msg)  std::cout << msg << std::endl;
+#else
+#define pr_debug(msg)  do {} while (0)
+#endif
+
 ValPtr IRGen::LogError(std::string_view message){
     std::cerr<<"Error From IRGen (Jason Compiler): "<< message << std::endl;
     _error_num++;
@@ -127,6 +133,7 @@ ValPtr IRGen::GenerateOn(const UnaryAST& ast){
     auto opr = ast.opr()->GenerateIR(*this);
     if (!opr) return nullptr;
     auto dest = _now_func->AddSlot();
+    _now_func->PushDeclInst<DeclareVarInst>(dest);
     _now_func->PushInst<UnaryInst>(ast.op(), dest, std::move(opr));
     return dest;
 }
@@ -151,23 +158,28 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
         auto rhs = ast.rhs()->GenerateIR(*this);
         if(!lhs || !rhs) return nullptr;
         auto dest = _now_func->AddSlot();
-        if (lhs->is_array && rhs->is_array){
+        _now_func->PushDeclInst<DeclareVarInst>(dest);
+        if (lhs->is_array == 1 && rhs->is_array == 1){
             auto dest1 = _now_func->AddSlot();
+            _now_func->PushDeclInst<DeclareVarInst>(dest1);
             _now_func->PushInst<AssignInst>(dest1, lhs);
             auto dest2 = _now_func->AddSlot();
+            _now_func->PushDeclInst<DeclareVarInst>(dest2);
             _now_func->PushInst<AssignInst>(dest2, rhs);
             _now_func->PushInst<BinaryInst>(ast.op(), dest, dest1, dest2);
         }
         else{ 
-            if (lhs->is_array)
+            if (lhs->is_array == 1)
             {
                 auto dest1 = _now_func->AddSlot();
+                _now_func->PushDeclInst<DeclareVarInst>(dest1);
                 _now_func->PushInst<AssignInst>(dest1, lhs);
                 _now_func->PushInst<BinaryInst>(ast.op(), dest, dest1, std::move(rhs));
             }
             else{
-                if (rhs->is_array){
+                if (rhs->is_array == 1){
                     auto dest2 = _now_func->AddSlot();
+                    _now_func->PushDeclInst<DeclareVarInst>(dest2);
                     _now_func->PushInst<AssignInst>(dest2, rhs);
                     _now_func->PushInst<BinaryInst>(ast.op(), dest, std::move(lhs), dest2);
                 }
@@ -221,7 +233,9 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     //Not finished yet.
     auto dims = std::dynamic_pointer_cast<DimensionAST>(ast.exprs());
     auto dest = _now_func->AddSlot();
+    _now_func->PushDeclInst<DeclareVarInst>(dest);
     auto middle = _now_func->AddSlot();
+    _now_func->PushDeclInst<DeclareVarInst>(middle);
     if(entry){
         std::size_t offset = 0;
         std::size_t start = entry->symbol_size() / sizeof(int);
@@ -229,7 +243,7 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
             start = start/entry->shape().at(i);
             auto tmp = dims->const_dims().at(i)->GenerateIR(*this);
             if(!tmp) assert("Fail to evaluate a dimension!");
-            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::move(std::make_shared<IntVal>(start)));
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::make_shared<IntVal>(start));
             _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, middle);
         }
         assert(start == 1);
@@ -246,7 +260,7 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
         for (std::size_t i = 0; i < func_table_entry->second->dim()-1; i++){
             auto tmp = dims->const_dims().at(i)->GenerateIR(*this);
             if(!tmp) assert("Fail to evaluate a dimension!");
-            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::move(std::make_shared<IntVal>(start)));
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(tmp), std::make_shared<IntVal>(start));
             _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, middle);
             start = start/func_table_entry->second->shape().at(i);
         }
@@ -255,13 +269,19 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
         if(!tmp) assert("Fail to evaluate a dimension!");
         _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, std::move(tmp));
     }
+    _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, dest, dest, std::make_shared<IntVal>(4));
     return std::make_shared<ArrayRefVal>(base, dest);
 }
 
 ValPtr IRGen::GenerateOn(const ReturnAST& ast){
-    auto expr = ast.expr()->GenerateIR(*this);
-    if(!expr) return nullptr;
-    _now_func->PushInst<ReturnInst>(std::move(expr));
+    if (ast.expr()!= nullptr){
+        auto expr = ast.expr()->GenerateIR(*this);
+        if(!expr) return nullptr;
+        _now_func->PushInst<ReturnInst>(std::move(expr));
+    }
+    else{
+        _now_func->PushInst<ReturnInst>(nullptr);
+    }
     return nullptr;
 }
 
@@ -294,6 +314,7 @@ ValPtr IRGen::GenerateOn(const FuncCallAST& ast){
     
     if(it->second->ret_type()==yy::parser::token::TOK_INT){
         auto dest = _now_func->AddSlot();
+        _now_func->PushDeclInst<DeclareVarInst>(dest);
         _now_func->PushInst<FuncCallInst>(dest, it->second, std::move(args));
         return dest;
     }
@@ -310,6 +331,9 @@ ValPtr IRGen::GenerateOn(const ExpAST& ast){
 }
 
 ValPtr IRGen::GenerateOn(const IfAST& ast){
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Entering IfAST"<<std::endl;
+    #endif
     auto cond = ast.cond()->GenerateIR(*this);
     if (!cond) return nullptr;
     auto false_branch = std::make_shared<LabelVal>();
@@ -318,7 +342,7 @@ ValPtr IRGen::GenerateOn(const IfAST& ast){
     _now_func->PushInst<BranchInst>(false, std::move(cond), false_branch);
     // generate the true branch
     ast.then()->GenerateIR(*this);
-    if (ast.else_then()) _now_func->PushInst<JumpInst>(end_if);
+    if (ast.else_then()) {_now_func->PushInst<JumpInst>(end_if);pr_debug("Generating Label for else_then");}
     // generate the false branch
     _now_func->PushInst<LabelInst>(std::move(false_branch));
     if (ast.else_then()) {
@@ -329,18 +353,40 @@ ValPtr IRGen::GenerateOn(const IfAST& ast){
 }
 //While cond do stmt
 ValPtr IRGen::GenerateOn(const WhileAST& ast){
+    pr_debug("Entering WhileAST");
     auto judge_label = std::make_shared<LabelVal>();
-    _now_func->PushInst<LabelInst>(std::move(judge_label));
+    _now_func->PushInst<LabelInst>(judge_label);
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Generating judge_label"<<std::endl;
+    #endif
     auto cond = ast.cond()->GenerateIR(*this);
     if (!cond) return nullptr;
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Generating condition"<<std::endl;
+    #endif
     auto false_branch = std::make_shared<LabelVal>();
     _now_func->PushInst<BranchInst>(false, std::move(cond), false_branch);
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Generating False Jump"<<std::endl;
+    #endif
     auto loop_env = NewLoopEnv();
     _loop_labels->AddItem("judge_label", judge_label);
     _loop_labels->AddItem("false_branch", false_branch);
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Entering New Loop Env"<<std::endl;
+        if(ast.stmt() == nullptr){
+            std::cout<<"Null Pointer!"<<std::endl;
+        }
+    #endif
     ast.stmt()->GenerateIR(*this);
-    _now_func->PushInst<JumpInst>(judge_label);
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Entering Block"<<std::endl;
+    #endif
+    _now_func->PushInst<JumpInst>(std::move(judge_label));
     _now_func->PushInst<LabelInst>(false_branch);
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Generating WhileAST"<<std::endl;
+    #endif
     return nullptr;
 }
 
@@ -348,19 +394,33 @@ ValPtr IRGen::GenerateOn(const CondAST& ast){
     //Continue jmp to current judge label
     //Break jmp to current false_branch
     //Have to store the current false_branch and judge label.
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Entering CondAST"<<std::endl;
+    #endif
     switch (ast.cond_type())
     {
     case yy::parser::token::TOK_BREAK:{
+        #ifdef __DEBUG_IRGEN__
+            std::cout<<"Entering Break"<<std::endl;
+        #endif
         auto false_branch = _loop_labels->GetItem("false_branch", false);
-        if(!false_branch) return LogError("break statement not within a loop");
+        if(!false_branch) {pr_debug("No False Branch"); return LogError("break statement not within a loop");}
         _now_func->PushInst<JumpInst>(false_branch);
+        #ifdef __DEBUG_IRGEN__
+            std::cout<<"Leaving Break"<<std::endl;
+        #endif
         break;}
     case yy::parser::token::TOK_CONTINUE:{
+        #ifdef __DEBUG_IRGEN__
+            std::cout<<"Entering Continue"<<std::endl;
+        #endif
         auto judge_label = _loop_labels->GetItem("judge_label", false);
         if(!judge_label) return LogError("continue statement not within a loop");
         _now_func->PushInst<JumpInst>(judge_label);
+        #ifdef __DEBUG_IRGEN__
+            std::cout<<"Leaving Continue"<<std::endl;
+        #endif
         break;}
-    
     default:
         return LogError("Undefined Branch Type");
     }
@@ -377,6 +437,7 @@ ValPtr IRGen::GenerateOn(const AssignAST& ast){
     if(!slot) return LogError("Symbol Undefined");
     if(ast.expr()->is_lval_array == 1 && ast.lval()->is_lval_array == 1){
         auto dest = _now_func->AddSlot();
+        _now_func->PushDeclInst<DeclareVarInst>(dest);
         _now_func->PushInst<AssignInst>(dest, std::move(expr));
         _now_func->PushInst<AssignInst>(std::move(slot), std::move(dest));
     }
@@ -388,6 +449,9 @@ ValPtr IRGen::GenerateOn(const AssignAST& ast){
 
 //; OR {BlockItems} BlockItems should be in a new environment.
 ValPtr IRGen::GenerateOn(const BlockAST& ast){
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Entering BlockAST"<<std::endl;
+    #endif
     if (ast.blockitem() == nullptr) return nullptr;
     auto env = NewEnvironment();
     auto sym = NewSymTable();
@@ -401,18 +465,20 @@ ValPtr IRGen::GenerateOn(const BlockAST& ast){
 //Have to think of a way to do all the declaration First.
 //Add a new indicator to tree nodes.
 ValPtr IRGen::GenerateOn(const BlockItemsAST& ast){
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Entering BlockItemAST"<<std::endl;
+    #endif
     for (const auto &i : ast.const_items()){
-        if(i->is_decl == 1){
-            i->GenerateIR(*this);
-            if(_error_num) return LogError("Error in this Declaration");
-        }
+        i->GenerateIR(*this);
+        if(_error_num) return LogError("Error in this Declaration");
     }
+    /*
     for (const auto &i : ast.const_items()){
         if(i->is_decl != 1){
             i->GenerateIR(*this);
             if(_error_num) return LogError("Error in this Statement");
         }
-    }
+    }*/
     return nullptr;
 }
 
@@ -425,7 +491,7 @@ ValPtr IRGen::GenerateOn(const BlockItemsAST& ast){
 */
 ValPtr IRGen::GenerateOn(const FuncDefAST& ast){
     #ifdef __DEBUG_IRGEN__
-        std::cout<<"Entering FuncDefAST"<<std::endl;
+        std::cout<<"Entering FuncDefAST "<<ast.name()<<std::endl;
     #endif
     if(ast.params()!=nullptr){
         auto param_list = std::dynamic_pointer_cast<FuncFParamsAST>(ast.params());
@@ -541,7 +607,7 @@ ValPtr IRGen::process_value(std::shared_ptr<ConstInitValArrayAST> ast, std::vect
     }
     
     for(const auto &i: values->const_exprs()){
-        if(i->is_array){
+        if(i->is_array == 1){
             // Is a ConstInitValArrayAST
             auto sub_ast = std::dynamic_pointer_cast<ConstInitValArrayAST>(i);
             auto back = dim - 1;
@@ -593,7 +659,7 @@ ValPtr IRGen::process_value(std::shared_ptr<ConstInitValArrayAST> ast, std::vect
     return nullptr;
 }
 ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
-    if(ast.is_array_def()){
+    if(ast.is_array_def() == 1){
         //2. Generate on Arrays
         //Evaluate expr or {expr, expr, {expr, expr},{expr}}
         //To-do
@@ -697,15 +763,24 @@ ValPtr IRGen::process_slot(std::shared_ptr<InitValArrayAST> ast, std::vector<std
         }
         return nullptr;
     }
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Entering process_slot"<<std::endl;
+    #endif
     auto values = std::dynamic_pointer_cast<InitValAST>(ast->init_vals());
     std::vector<std::size_t> position;
     //Start from all zeros;
     for(std::size_t i = 0; i < dim; i++){
         position.push_back(0);
     }
-    
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing initializing position"<<std::endl;
+        std::cout<<"The number of exprs in the first level is "<<values->exprs().size()<<std::endl;
+    #endif
     for(const auto &i: values->exprs()){
-        if(i->is_array){
+        if(i->is_array == 1){
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Entering nested bracket"<<std::endl;
+            #endif
             // Is a ConstInitValArrayAST
             auto sub_ast = std::dynamic_pointer_cast<InitValArrayAST>(i);
             auto back = dim - 1;
@@ -724,8 +799,14 @@ ValPtr IRGen::process_slot(std::shared_ptr<InitValArrayAST> ast, std::vector<std
                 position.at(back-1) += 1;
                 back -= 1;
             }
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Leaving nested bracket"<<std::endl;
+            #endif
         }
         else{
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Entering expr"<<std::endl;
+            #endif
             auto expr = i->GenerateIR(*this);
             if (!expr) return LogError("Can not evaluate the Init Value of a const Variable");
             result.push_back(expr);
@@ -737,7 +818,9 @@ ValPtr IRGen::process_slot(std::shared_ptr<InitValArrayAST> ast, std::vector<std
                 position.at(back-1) += 1;
                 back -= 1;
             }
-            
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Leaving expr"<<std::endl;
+            #endif
         }
     }
     //Padding With Zeros.
@@ -753,11 +836,14 @@ ValPtr IRGen::process_slot(std::shared_ptr<InitValArrayAST> ast, std::vector<std
             back -= 1;
         }
     }
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing padding"<<std::endl;
+    #endif
     return nullptr;
 }
 
 ValPtr IRGen::GenerateOn(const VarDefAST& ast){
-    if(ast.is_array_def()){
+    if(ast.is_array_def() == 1){
         if (ast.init_val() == nullptr){
             //2. Generate on Arrays
             //Evaluate expr or {expr, expr, {expr, expr},{expr}}
@@ -793,11 +879,17 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             //Evaluate expr or {expr, expr, {expr, expr},{expr}}
             //To-do
             //Create slot
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Entering the most complex VarDefAST "<<ast.id()<<std::endl;
+            #endif
             auto slot = _now_func->AddVarSlot();
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("Array has already been defined");
             }
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Finishing adding slot in the most complex VarDefAST"<<std::endl;
+            #endif
             //Evaluate each dimension
             std::vector<std::optional<int> > dim_list;
             auto dim_exprs = std::dynamic_pointer_cast<DimensionAST>(ast.const_exprs());
@@ -806,6 +898,9 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
                 if(!expr) return LogError("Can not Evaluate the Dimension of the const Array");
                 dim_list.push_back(std::move(expr));
             }
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Finishing evaluating each dimension in the most complex VarDefAST"<<std::endl;
+            #endif
             //Create Entry in the Symbol Table
             auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT, 0, 1);
             ste->_dim = dim_list.size();
@@ -813,9 +908,15 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
                 ste->_symbol_size *= (*i);
                 ste->_shape.push_back(*i);
             }
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Finishing creating entry in the most complex VarDefAST"<<std::endl;
+            #endif
             //Insert Array Declaration Instruction
             _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
             _symbol_table->AddItem(ast.id(), ste);
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Finishing inserting decl insts in the most complex VarDefAST"<<std::endl;
+            #endif
             //Store the value
             ValPtrList temp_values;
             //First have to check _const_init_value points to a single expression or 
@@ -831,9 +932,23 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
                     temp_values.push_back(val);
                 }
             }
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Finishing generating slots insts in the most complex VarDefAST"<<std::endl;
+            #endif
             for(size_t i = 0; i < ste->_symbol_size ; i+=4){
-                _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)), temp_values.at(i/4));
+                if(temp_values.at(i/4)->is_array == 1)
+                    {
+                        auto dest1 = _now_func->AddSlot();
+                        _now_func->PushDeclInst<DeclareVarInst>(dest1);
+                        _now_func->PushInst<AssignInst>(dest1, temp_values.at(i/4));
+                        _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)),std::move(dest1));
+                    }
+                else
+                    {_now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)), temp_values.at(i/4));}
             }
+            #ifdef __DEBUG_IRGEN__
+                std::cout<<"Finishing inserting assign insts in the most complex VarDefAST"<<std::endl;
+            #endif
             return nullptr;
         }
     }
@@ -868,7 +983,15 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT,0,0);
             _symbol_table->AddItem(ast.id(), std::move(ste));
             //Generate Assign Expression;
-            _now_func->PushInst<AssignInst>(std::move(slot), std::move(expr));
+            if(expr->is_array == 1)
+                {
+                    auto dest1 = _now_func->AddSlot();
+                    _now_func->PushDeclInst<DeclareVarInst>(dest1);
+                    _now_func->PushInst<AssignInst>(dest1, std::move(expr));
+                    _now_func->PushInst<AssignInst>(std::move(slot),std::move(dest1));
+                }
+            else
+                {_now_func->PushInst<AssignInst>(std::move(slot), std::move(expr));}
             return nullptr;
         }
     }
