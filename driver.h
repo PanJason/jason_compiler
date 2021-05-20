@@ -19,7 +19,7 @@
 // ... and declare it for the parser's sake.
 YY_DECL;
 
-// Conducting the whole scanning and parsing of Calc++.
+// Conducting the whole scanning and parsing
 class driver
 {
 public:
@@ -32,6 +32,8 @@ public:
   IRGen irgen;
 
   int parse (const std::string& f);
+  int compile (const std::string& f);
+  int Dump_Eeyore(std::ostream &os);
   std::string file;
   bool trace_parsing;
   void scan_begin ();
