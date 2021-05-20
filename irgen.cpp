@@ -239,6 +239,7 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     if(entry){
         std::size_t offset = 0;
         std::size_t start = entry->symbol_size() / sizeof(int);
+        _now_func->PushInst<AssignInst>(dest, std::make_shared<IntVal>(0));
         for (std::size_t i = 0; i < entry->dim(); i++){
             start = start/entry->shape().at(i);
             auto tmp = dims->const_dims().at(i)->GenerateIR(*this);
@@ -257,6 +258,7 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
         std::size_t offset = 0;
         std::size_t start = func_table_entry->second->symbol_size()/sizeof(int);
         //Dimension n , n-1 dimensions in the vector.
+        _now_func->PushInst<AssignInst>(dest, std::make_shared<IntVal>(0));
         for (std::size_t i = 0; i < func_table_entry->second->dim()-1; i++){
             auto tmp = dims->const_dims().at(i)->GenerateIR(*this);
             if(!tmp) assert("Fail to evaluate a dimension!");
@@ -277,7 +279,16 @@ ValPtr IRGen::GenerateOn(const ReturnAST& ast){
     if (ast.expr()!= nullptr){
         auto expr = ast.expr()->GenerateIR(*this);
         if(!expr) return nullptr;
-        _now_func->PushInst<ReturnInst>(std::move(expr));
+        if (expr->is_array == 1){
+            auto dest = _now_func->AddSlot();
+            _now_func->PushDeclInst<DeclareVarInst>(dest);
+            _now_func->PushInst<AssignInst>(dest, std::move(expr));
+            _now_func->PushInst<ReturnInst>(std::move(dest));
+        }
+        else{
+            _now_func->PushInst<ReturnInst>(std::move(expr));
+        }
+        
     }
     else{
         _now_func->PushInst<ReturnInst>(nullptr);
