@@ -3,6 +3,7 @@
 #include <utility>
 #include <optional>
 #include "source.tab.hpp"
+#define __DEBUG_IRGEN__
 
 ValPtr IRGen::LogError(std::string_view message){
     std::cerr<<"Error From IRGen (Jason Compiler): "<< message << std::endl;
@@ -270,17 +271,27 @@ ValPtr IRGen::GenerateOn(const FuncCallAST& ast){
         it = _lib_funcs.find(ast.name());
         if(it == _lib_funcs.end()) return LogError("Function Not Defined!");
     }
-    auto param_list = std::dynamic_pointer_cast<FuncRParamsAST>(ast.params());
-    if (param_list->const_exprs().size() != it->second->num_args()){
-        return LogError("Argument Count Mismatch");
-    }
-    //Some type type check can be carried out here.
     ValPtrList args;
-    for (const auto &i: param_list->const_exprs()){
-        auto arg = i->GenerateIR(*this);
-        if (!arg) return nullptr;
-        args.push_back(std::move(arg));
+    if(ast.params()!=nullptr){
+        auto param_list = std::dynamic_pointer_cast<FuncRParamsAST>(ast.params());
+        if (param_list->const_exprs().size() != it->second->num_args()){
+            return LogError("Argument Count Mismatch");
+        }
+        for (const auto &i: param_list->const_exprs()){
+            auto arg = i->GenerateIR(*this);
+            if (!arg) return nullptr;
+            args.push_back(std::move(arg));
+        }
     }
+    else{
+        if (0 != it->second->num_args()){
+            return LogError("Argument Count Mismatch");
+        }
+    }
+    
+    //Some type type check can be carried out here.
+    
+    
     if(it->second->ret_type()==yy::parser::token::TOK_INT){
         auto dest = _now_func->AddSlot();
         _now_func->PushInst<FuncCallInst>(dest, it->second, std::move(args));
@@ -413,47 +424,71 @@ ValPtr IRGen::GenerateOn(const BlockItemsAST& ast){
     ValPtr GenerateOn(const FuncFParamArrayAST& ast);
 */
 ValPtr IRGen::GenerateOn(const FuncDefAST& ast){
-    auto param_list = std::dynamic_pointer_cast<FuncFParamsAST>(ast.params());
-    _now_func = std::make_shared<FunctionDef>(ast.name(),param_list->const_params().size(), ast.func_type());
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Entering FuncDefAST"<<std::endl;
+    #endif
+    if(ast.params()!=nullptr){
+        auto param_list = std::dynamic_pointer_cast<FuncFParamsAST>(ast.params());
+        _now_func = std::make_shared<FunctionDef>(ast.name(),param_list->const_params().size(), ast.func_type());
+    }
+    else{
+        _now_func = std::make_shared<FunctionDef>(ast.name(),0, ast.func_type());
+    }
+    
     if(!_funcs.insert({_now_func->func_name(), _now_func}).second){
         return LogError("Function has already beed defined!");
     }
     //Create a function table
     _func_table.insert(std::make_pair(ast.name(),std::unordered_map<std::string, FTEPtr>()));
     auto table = _func_table.find(ast.name());
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Initializing functable of "<<_now_func->func_name()<<std::endl;
+    #endif
     //Insert the params to some function table
     auto env = NewEnvironment();
     auto sym = NewSymTable();
     auto convars = NewConstVars();
-    int p = 0;
-    for(const auto &i : param_list->const_params()){
-        if(i->is_array == 1)
-        {
-            auto tmp = std::dynamic_pointer_cast<FuncFParamArrayAST>(i);
-            _vars->AddItem(tmp->name(), std::make_shared<ArgRefVal>(p++));
-            
-            auto entry = std::make_shared<FuncTableEntry>(tmp->param_type(),1);
-            //Evaluate each dimension and insert
-            if(tmp->dimension()!=nullptr){
-                auto dims = std::dynamic_pointer_cast<DimensionAST>(tmp->dimension());
-                entry->_dim = 1 + dims->const_dims().size();
-                for(const auto &i : dims->const_dims()){
-                    auto tmp = i->Eval(*this);
-                    if(!tmp) return LogError("Fail To Evaluate the dimension!");
-                    entry->_symbol_size *= (*tmp);
-                    entry->_shape.push_back(*tmp);
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Initializing Env of "<<_now_func->func_name()<<std::endl;
+    #endif
+    if(ast.params()!=nullptr){
+        int p = 0;
+        auto param_list = std::dynamic_pointer_cast<FuncFParamsAST>(ast.params());
+        for(const auto &i : param_list->const_params()){
+            if(i->is_array == 1)
+            {
+                auto tmp = std::dynamic_pointer_cast<FuncFParamArrayAST>(i);
+                _vars->AddItem(tmp->name(), std::make_shared<ArgRefVal>(p++));
+                
+                auto entry = std::make_shared<FuncTableEntry>(tmp->param_type(),1);
+                //Evaluate each dimension and insert
+                if(tmp->dimension()!=nullptr){
+                    auto dims = std::dynamic_pointer_cast<DimensionAST>(tmp->dimension());
+                    entry->_dim = 1 + dims->const_dims().size();
+                    for(const auto &i : dims->const_dims()){
+                        auto tmp = i->Eval(*this);
+                        if(!tmp) return LogError("Fail To Evaluate the dimension!");
+                        entry->_symbol_size *= (*tmp);
+                        entry->_shape.push_back(*tmp);
+                    }
                 }
+                table->second.insert(std::make_pair<const std::string&, FTEPtr>(tmp->name(), std::move(entry)));
             }
-            table->second.insert(std::make_pair<const std::string&, FTEPtr>(tmp->name(), std::move(entry)));
-        }
-        if(i->is_array == 0){
-            auto tmp = std::dynamic_pointer_cast<FuncFParamVarAST>(i);
-            _vars->AddItem(tmp->name(), std::make_shared<ArgRefVal>(p++));
-            auto entry = std::make_shared<FuncTableEntry>(tmp->param_type(),0);
-            table->second.insert(std::make_pair<const std::string&, FTEPtr>(tmp->name(), std::move(entry)));
+            if(i->is_array == 0){
+                auto tmp = std::dynamic_pointer_cast<FuncFParamVarAST>(i);
+                _vars->AddItem(tmp->name(), std::make_shared<ArgRefVal>(p++));
+                auto entry = std::make_shared<FuncTableEntry>(tmp->param_type(),0);
+                table->second.insert(std::make_pair<const std::string&, FTEPtr>(tmp->name(), std::move(entry)));
+            }
         }
     }
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Initializing Variables of "<<_now_func->func_name()<<std::endl;
+    #endif
     ast.block()->GenerateIR(*this);
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Initializing Block Content of "<<_now_func->func_name()<<std::endl;
+    #endif
     return nullptr;
 }
 
@@ -848,24 +883,43 @@ ValPtr IRGen::GenerateOn(const CompUnitAST& ast){
     }
     //Create a function table
     _func_table.insert(std::make_pair("00_GLOBAL",std::unordered_map<std::string, FTEPtr>()));
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Initializing GLOBAL"<<std::endl;
+    #endif
     auto env = NewEnvironment();
     auto sym = NewSymTable();
     auto convars = NewConstVars();
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Initializing New Env"<<std::endl;
+    #endif
     for (const auto &i : ast.units()){
         if(i->is_decl == 1){
             i->GenerateIR(*this);
             if(_error_num) return LogError("Error in this Declaration");
         }
     }
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Declarations"<<std::endl;
+    #endif
     for (const auto &i : ast.units()){
         if(i->is_decl != 1){
             i->GenerateIR(*this);
             if(_error_num) return LogError("Error in this Function Definition");
         }
     }
+    #ifdef __DEBUG_IRGEN__
+        std::cout<<"Finishing Function Defs"<<std::endl;
+    #endif
     return nullptr;
 }
 
 void IRGen::Dump_Eeyore(std::ostream &os) const {
-  for (const auto &it : _funcs) it.second->Dump_Eeyore(os);
+    auto glob = _funcs.find("00_GLOBAL");
+    glob->second->Dump_Eeyore_GLOB(os);
+    for (const auto &it : _funcs) {
+        if (it.first != "00_GLOBAL")
+        {
+            it.second->Dump_Eeyore(os);
+        }
+    }
 }

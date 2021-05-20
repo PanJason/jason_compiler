@@ -495,6 +495,7 @@ namespace yy {
     {
       enum yytokentype
       {
+        TOK_END = 0,
         TOK_IF = 258,
         TOK_THEN = 259,
         TOK_ELSE = 260,
@@ -529,11 +530,10 @@ namespace yy {
         TOK_AND = 289,
         TOK_OR = 290,
         TOK_ERROR = 291,
-        TOK_END = 292,
-        TOK_OCT_NUM = 293,
-        TOK_DEC_NUM = 294,
-        TOK_HEX_NUM = 295,
-        TOK_ID = 296
+        TOK_OCT_NUM = 292,
+        TOK_DEC_NUM = 293,
+        TOK_HEX_NUM = 294,
+        TOK_ID = 295
       };
     };
 
@@ -649,61 +649,61 @@ namespace yy {
         // Type destructor.
 switch (yytype)
     {
-      case 43: // program
-      case 44: // CompUnit
-      case 45: // Decl
-      case 46: // ConstDecl
-      case 47: // ConstDefList
-      case 48: // ConstDef
-      case 49: // Dimension
-      case 50: // ConstInitVal
-      case 51: // ConstInitValArray
-      case 53: // ConstInitValList
-      case 54: // VarDecl
-      case 55: // VarDefList
-      case 56: // VarDef
-      case 57: // InitVal
-      case 58: // InitValArray
-      case 59: // InitValList
-      case 60: // FuncDef
-      case 61: // FuncFParams
-      case 62: // FuncFParam
-      case 63: // FuncFParamVar
-      case 64: // FuncFParamArray
-      case 65: // Block
-      case 66: // BlockItems
-      case 67: // BlockItem
-      case 68: // Stmt
-      case 69: // Assign_stmt
-      case 70: // Exp_stmt
-      case 71: // If_stmt
-      case 72: // While_stmt
-      case 73: // Cond_stmt
-      case 74: // Return_stmt
-      case 75: // Exp
-      case 76: // Cond
-      case 77: // LVal
-      case 78: // PrimaryExp
-      case 79: // UnaryExp
-      case 80: // FuncCallExp
-      case 81: // FuncRParams
-      case 82: // MulExp
-      case 83: // AddExp
-      case 84: // RelExp
-      case 85: // EqExp
-      case 86: // LAndExp
-      case 87: // LOrExp
-      case 88: // IDENT
+      case 42: // program
+      case 43: // CompUnit
+      case 44: // Decl
+      case 45: // ConstDecl
+      case 46: // ConstDefList
+      case 47: // ConstDef
+      case 48: // Dimension
+      case 49: // ConstInitVal
+      case 50: // ConstInitValArray
+      case 52: // ConstInitValList
+      case 53: // VarDecl
+      case 54: // VarDefList
+      case 55: // VarDef
+      case 56: // InitVal
+      case 57: // InitValArray
+      case 58: // InitValList
+      case 59: // FuncDef
+      case 60: // FuncFParams
+      case 61: // FuncFParam
+      case 62: // FuncFParamVar
+      case 63: // FuncFParamArray
+      case 64: // Block
+      case 65: // BlockItems
+      case 66: // BlockItem
+      case 67: // Stmt
+      case 68: // Assign_stmt
+      case 69: // Exp_stmt
+      case 70: // If_stmt
+      case 71: // While_stmt
+      case 72: // Cond_stmt
+      case 73: // Return_stmt
+      case 74: // Exp
+      case 75: // Cond
+      case 76: // LVal
+      case 77: // PrimaryExp
+      case 78: // UnaryExp
+      case 79: // FuncCallExp
+      case 80: // FuncRParams
+      case 81: // MulExp
+      case 82: // AddExp
+      case 83: // RelExp
+      case 84: // EqExp
+      case 85: // LAndExp
+      case 86: // LOrExp
+      case 87: // IDENT
         value.template destroy< ASTPtr > ();
         break;
 
-      case 38: // OCT_NUM
-      case 39: // DEC_NUM
-      case 40: // HEX_NUM
+      case 37: // OCT_NUM
+      case 38: // DEC_NUM
+      case 39: // HEX_NUM
         value.template destroy< int > ();
         break;
 
-      case 41: // ID
+      case 40: // ID
         value.template destroy< std::string > ();
         break;
 
@@ -783,13 +783,13 @@ switch (yytype)
       symbol_type (int tok, location_type l)
         : super_type(token_type (tok), std::move (l))
       {
-        YY_ASSERT (tok == 0 || tok == token::TOK_IF || tok == token::TOK_THEN || tok == token::TOK_ELSE || tok == token::TOK_WHILE || tok == token::TOK_BREAK || tok == token::TOK_CONTINUE || tok == token::TOK_RETURN || tok == token::TOK_CONST || tok == token::TOK_INT || tok == token::TOK_VOID || tok == token::TOK_ASSIGN || tok == token::TOK_SEMI || tok == token::TOK_COMMA || tok == token::TOK_LLPAREN || tok == token::TOK_LRPAREN || tok == token::TOK_MLPAREN || tok == token::TOK_MRPAREN || tok == token::TOK_SLPAREN || tok == token::TOK_SRPAREN || tok == token::TOK_NOT || tok == token::TOK_EQ || tok == token::TOK_NEQ || tok == token::TOK_LT || tok == token::TOK_GT || tok == token::TOK_LTE || tok == token::TOK_GTE || tok == token::TOK_PLUS || tok == token::TOK_MINUS || tok == token::TOK_TIMES || tok == token::TOK_OVER || tok == token::TOK_MOD || tok == token::TOK_AND || tok == token::TOK_OR || tok == token::TOK_ERROR || tok == token::TOK_END);
+        YY_ASSERT (tok == token::TOK_END || tok == token::TOK_IF || tok == token::TOK_THEN || tok == token::TOK_ELSE || tok == token::TOK_WHILE || tok == token::TOK_BREAK || tok == token::TOK_CONTINUE || tok == token::TOK_RETURN || tok == token::TOK_CONST || tok == token::TOK_INT || tok == token::TOK_VOID || tok == token::TOK_ASSIGN || tok == token::TOK_SEMI || tok == token::TOK_COMMA || tok == token::TOK_LLPAREN || tok == token::TOK_LRPAREN || tok == token::TOK_MLPAREN || tok == token::TOK_MRPAREN || tok == token::TOK_SLPAREN || tok == token::TOK_SRPAREN || tok == token::TOK_NOT || tok == token::TOK_EQ || tok == token::TOK_NEQ || tok == token::TOK_LT || tok == token::TOK_GT || tok == token::TOK_LTE || tok == token::TOK_GTE || tok == token::TOK_PLUS || tok == token::TOK_MINUS || tok == token::TOK_TIMES || tok == token::TOK_OVER || tok == token::TOK_MOD || tok == token::TOK_AND || tok == token::TOK_OR || tok == token::TOK_ERROR);
       }
 #else
       symbol_type (int tok, const location_type& l)
         : super_type(token_type (tok), l)
       {
-        YY_ASSERT (tok == 0 || tok == token::TOK_IF || tok == token::TOK_THEN || tok == token::TOK_ELSE || tok == token::TOK_WHILE || tok == token::TOK_BREAK || tok == token::TOK_CONTINUE || tok == token::TOK_RETURN || tok == token::TOK_CONST || tok == token::TOK_INT || tok == token::TOK_VOID || tok == token::TOK_ASSIGN || tok == token::TOK_SEMI || tok == token::TOK_COMMA || tok == token::TOK_LLPAREN || tok == token::TOK_LRPAREN || tok == token::TOK_MLPAREN || tok == token::TOK_MRPAREN || tok == token::TOK_SLPAREN || tok == token::TOK_SRPAREN || tok == token::TOK_NOT || tok == token::TOK_EQ || tok == token::TOK_NEQ || tok == token::TOK_LT || tok == token::TOK_GT || tok == token::TOK_LTE || tok == token::TOK_GTE || tok == token::TOK_PLUS || tok == token::TOK_MINUS || tok == token::TOK_TIMES || tok == token::TOK_OVER || tok == token::TOK_MOD || tok == token::TOK_AND || tok == token::TOK_OR || tok == token::TOK_ERROR || tok == token::TOK_END);
+        YY_ASSERT (tok == token::TOK_END || tok == token::TOK_IF || tok == token::TOK_THEN || tok == token::TOK_ELSE || tok == token::TOK_WHILE || tok == token::TOK_BREAK || tok == token::TOK_CONTINUE || tok == token::TOK_RETURN || tok == token::TOK_CONST || tok == token::TOK_INT || tok == token::TOK_VOID || tok == token::TOK_ASSIGN || tok == token::TOK_SEMI || tok == token::TOK_COMMA || tok == token::TOK_LLPAREN || tok == token::TOK_LRPAREN || tok == token::TOK_MLPAREN || tok == token::TOK_MRPAREN || tok == token::TOK_SLPAREN || tok == token::TOK_SRPAREN || tok == token::TOK_NOT || tok == token::TOK_EQ || tok == token::TOK_NEQ || tok == token::TOK_LT || tok == token::TOK_GT || tok == token::TOK_LTE || tok == token::TOK_GTE || tok == token::TOK_PLUS || tok == token::TOK_MINUS || tok == token::TOK_TIMES || tok == token::TOK_OVER || tok == token::TOK_MOD || tok == token::TOK_AND || tok == token::TOK_OR || tok == token::TOK_ERROR);
       }
 #endif
 #if 201103L <= YY_CPLUSPLUS
@@ -855,6 +855,21 @@ switch (yytype)
     void error (const syntax_error& err);
 
     // Implementation of make_symbol for each symbol type.
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_END (location_type l)
+      {
+        return symbol_type (token::TOK_END, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_END (const location_type& l)
+      {
+        return symbol_type (token::TOK_END, l);
+      }
+#endif
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
@@ -1368,21 +1383,6 @@ switch (yytype)
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
-      make_END (location_type l)
-      {
-        return symbol_type (token::TOK_END, std::move (l));
-      }
-#else
-      static
-      symbol_type
-      make_END (const location_type& l)
-      {
-        return symbol_type (token::TOK_END, l);
-      }
-#endif
-#if 201103L <= YY_CPLUSPLUS
-      static
-      symbol_type
       make_OCT_NUM (int v, location_type l)
       {
         return symbol_type (token::TOK_OCT_NUM, std::move (v), std::move (l));
@@ -1746,10 +1746,10 @@ switch (yytype)
     enum
     {
       yyeof_ = 0,
-      yylast_ = 323,     ///< Last index in yytable_.
+      yylast_ = 315,     ///< Last index in yytable_.
       yynnts_ = 47,  ///< Number of nonterminal symbols.
       yyfinal_ = 16, ///< Termination state number.
-      yyntokens_ = 42  ///< Number of tokens.
+      yyntokens_ = 41  ///< Number of tokens.
     };
 
 
@@ -1796,9 +1796,9 @@ switch (yytype)
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
       25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
-      35,    36,    37,    38,    39,    40,    41
+      35,    36,    37,    38,    39,    40
     };
-    const int user_token_number_max_ = 296;
+    const int user_token_number_max_ = 295;
 
     if (t <= 0)
       return yyeof_;
@@ -1818,61 +1818,61 @@ switch (yytype)
   {
     switch (this->type_get ())
     {
-      case 43: // program
-      case 44: // CompUnit
-      case 45: // Decl
-      case 46: // ConstDecl
-      case 47: // ConstDefList
-      case 48: // ConstDef
-      case 49: // Dimension
-      case 50: // ConstInitVal
-      case 51: // ConstInitValArray
-      case 53: // ConstInitValList
-      case 54: // VarDecl
-      case 55: // VarDefList
-      case 56: // VarDef
-      case 57: // InitVal
-      case 58: // InitValArray
-      case 59: // InitValList
-      case 60: // FuncDef
-      case 61: // FuncFParams
-      case 62: // FuncFParam
-      case 63: // FuncFParamVar
-      case 64: // FuncFParamArray
-      case 65: // Block
-      case 66: // BlockItems
-      case 67: // BlockItem
-      case 68: // Stmt
-      case 69: // Assign_stmt
-      case 70: // Exp_stmt
-      case 71: // If_stmt
-      case 72: // While_stmt
-      case 73: // Cond_stmt
-      case 74: // Return_stmt
-      case 75: // Exp
-      case 76: // Cond
-      case 77: // LVal
-      case 78: // PrimaryExp
-      case 79: // UnaryExp
-      case 80: // FuncCallExp
-      case 81: // FuncRParams
-      case 82: // MulExp
-      case 83: // AddExp
-      case 84: // RelExp
-      case 85: // EqExp
-      case 86: // LAndExp
-      case 87: // LOrExp
-      case 88: // IDENT
+      case 42: // program
+      case 43: // CompUnit
+      case 44: // Decl
+      case 45: // ConstDecl
+      case 46: // ConstDefList
+      case 47: // ConstDef
+      case 48: // Dimension
+      case 49: // ConstInitVal
+      case 50: // ConstInitValArray
+      case 52: // ConstInitValList
+      case 53: // VarDecl
+      case 54: // VarDefList
+      case 55: // VarDef
+      case 56: // InitVal
+      case 57: // InitValArray
+      case 58: // InitValList
+      case 59: // FuncDef
+      case 60: // FuncFParams
+      case 61: // FuncFParam
+      case 62: // FuncFParamVar
+      case 63: // FuncFParamArray
+      case 64: // Block
+      case 65: // BlockItems
+      case 66: // BlockItem
+      case 67: // Stmt
+      case 68: // Assign_stmt
+      case 69: // Exp_stmt
+      case 70: // If_stmt
+      case 71: // While_stmt
+      case 72: // Cond_stmt
+      case 73: // Return_stmt
+      case 74: // Exp
+      case 75: // Cond
+      case 76: // LVal
+      case 77: // PrimaryExp
+      case 78: // UnaryExp
+      case 79: // FuncCallExp
+      case 80: // FuncRParams
+      case 81: // MulExp
+      case 82: // AddExp
+      case 83: // RelExp
+      case 84: // EqExp
+      case 85: // LAndExp
+      case 86: // LOrExp
+      case 87: // IDENT
         value.move< ASTPtr > (std::move (that.value));
         break;
 
-      case 38: // OCT_NUM
-      case 39: // DEC_NUM
-      case 40: // HEX_NUM
+      case 37: // OCT_NUM
+      case 38: // DEC_NUM
+      case 39: // HEX_NUM
         value.move< int > (std::move (that.value));
         break;
 
-      case 41: // ID
+      case 40: // ID
         value.move< std::string > (std::move (that.value));
         break;
 
@@ -1891,61 +1891,61 @@ switch (yytype)
   {
     switch (this->type_get ())
     {
-      case 43: // program
-      case 44: // CompUnit
-      case 45: // Decl
-      case 46: // ConstDecl
-      case 47: // ConstDefList
-      case 48: // ConstDef
-      case 49: // Dimension
-      case 50: // ConstInitVal
-      case 51: // ConstInitValArray
-      case 53: // ConstInitValList
-      case 54: // VarDecl
-      case 55: // VarDefList
-      case 56: // VarDef
-      case 57: // InitVal
-      case 58: // InitValArray
-      case 59: // InitValList
-      case 60: // FuncDef
-      case 61: // FuncFParams
-      case 62: // FuncFParam
-      case 63: // FuncFParamVar
-      case 64: // FuncFParamArray
-      case 65: // Block
-      case 66: // BlockItems
-      case 67: // BlockItem
-      case 68: // Stmt
-      case 69: // Assign_stmt
-      case 70: // Exp_stmt
-      case 71: // If_stmt
-      case 72: // While_stmt
-      case 73: // Cond_stmt
-      case 74: // Return_stmt
-      case 75: // Exp
-      case 76: // Cond
-      case 77: // LVal
-      case 78: // PrimaryExp
-      case 79: // UnaryExp
-      case 80: // FuncCallExp
-      case 81: // FuncRParams
-      case 82: // MulExp
-      case 83: // AddExp
-      case 84: // RelExp
-      case 85: // EqExp
-      case 86: // LAndExp
-      case 87: // LOrExp
-      case 88: // IDENT
+      case 42: // program
+      case 43: // CompUnit
+      case 44: // Decl
+      case 45: // ConstDecl
+      case 46: // ConstDefList
+      case 47: // ConstDef
+      case 48: // Dimension
+      case 49: // ConstInitVal
+      case 50: // ConstInitValArray
+      case 52: // ConstInitValList
+      case 53: // VarDecl
+      case 54: // VarDefList
+      case 55: // VarDef
+      case 56: // InitVal
+      case 57: // InitValArray
+      case 58: // InitValList
+      case 59: // FuncDef
+      case 60: // FuncFParams
+      case 61: // FuncFParam
+      case 62: // FuncFParamVar
+      case 63: // FuncFParamArray
+      case 64: // Block
+      case 65: // BlockItems
+      case 66: // BlockItem
+      case 67: // Stmt
+      case 68: // Assign_stmt
+      case 69: // Exp_stmt
+      case 70: // If_stmt
+      case 71: // While_stmt
+      case 72: // Cond_stmt
+      case 73: // Return_stmt
+      case 74: // Exp
+      case 75: // Cond
+      case 76: // LVal
+      case 77: // PrimaryExp
+      case 78: // UnaryExp
+      case 79: // FuncCallExp
+      case 80: // FuncRParams
+      case 81: // MulExp
+      case 82: // AddExp
+      case 83: // RelExp
+      case 84: // EqExp
+      case 85: // LAndExp
+      case 86: // LOrExp
+      case 87: // IDENT
         value.copy< ASTPtr > (YY_MOVE (that.value));
         break;
 
-      case 38: // OCT_NUM
-      case 39: // DEC_NUM
-      case 40: // HEX_NUM
+      case 37: // OCT_NUM
+      case 38: // DEC_NUM
+      case 39: // HEX_NUM
         value.copy< int > (YY_MOVE (that.value));
         break;
 
-      case 41: // ID
+      case 40: // ID
         value.copy< std::string > (YY_MOVE (that.value));
         break;
 
@@ -1971,61 +1971,61 @@ switch (yytype)
     super_type::move (s);
     switch (this->type_get ())
     {
-      case 43: // program
-      case 44: // CompUnit
-      case 45: // Decl
-      case 46: // ConstDecl
-      case 47: // ConstDefList
-      case 48: // ConstDef
-      case 49: // Dimension
-      case 50: // ConstInitVal
-      case 51: // ConstInitValArray
-      case 53: // ConstInitValList
-      case 54: // VarDecl
-      case 55: // VarDefList
-      case 56: // VarDef
-      case 57: // InitVal
-      case 58: // InitValArray
-      case 59: // InitValList
-      case 60: // FuncDef
-      case 61: // FuncFParams
-      case 62: // FuncFParam
-      case 63: // FuncFParamVar
-      case 64: // FuncFParamArray
-      case 65: // Block
-      case 66: // BlockItems
-      case 67: // BlockItem
-      case 68: // Stmt
-      case 69: // Assign_stmt
-      case 70: // Exp_stmt
-      case 71: // If_stmt
-      case 72: // While_stmt
-      case 73: // Cond_stmt
-      case 74: // Return_stmt
-      case 75: // Exp
-      case 76: // Cond
-      case 77: // LVal
-      case 78: // PrimaryExp
-      case 79: // UnaryExp
-      case 80: // FuncCallExp
-      case 81: // FuncRParams
-      case 82: // MulExp
-      case 83: // AddExp
-      case 84: // RelExp
-      case 85: // EqExp
-      case 86: // LAndExp
-      case 87: // LOrExp
-      case 88: // IDENT
+      case 42: // program
+      case 43: // CompUnit
+      case 44: // Decl
+      case 45: // ConstDecl
+      case 46: // ConstDefList
+      case 47: // ConstDef
+      case 48: // Dimension
+      case 49: // ConstInitVal
+      case 50: // ConstInitValArray
+      case 52: // ConstInitValList
+      case 53: // VarDecl
+      case 54: // VarDefList
+      case 55: // VarDef
+      case 56: // InitVal
+      case 57: // InitValArray
+      case 58: // InitValList
+      case 59: // FuncDef
+      case 60: // FuncFParams
+      case 61: // FuncFParam
+      case 62: // FuncFParamVar
+      case 63: // FuncFParamArray
+      case 64: // Block
+      case 65: // BlockItems
+      case 66: // BlockItem
+      case 67: // Stmt
+      case 68: // Assign_stmt
+      case 69: // Exp_stmt
+      case 70: // If_stmt
+      case 71: // While_stmt
+      case 72: // Cond_stmt
+      case 73: // Return_stmt
+      case 74: // Exp
+      case 75: // Cond
+      case 76: // LVal
+      case 77: // PrimaryExp
+      case 78: // UnaryExp
+      case 79: // FuncCallExp
+      case 80: // FuncRParams
+      case 81: // MulExp
+      case 82: // AddExp
+      case 83: // RelExp
+      case 84: // EqExp
+      case 85: // LAndExp
+      case 86: // LOrExp
+      case 87: // IDENT
         value.move< ASTPtr > (YY_MOVE (s.value));
         break;
 
-      case 38: // OCT_NUM
-      case 39: // DEC_NUM
-      case 40: // HEX_NUM
+      case 37: // OCT_NUM
+      case 38: // DEC_NUM
+      case 39: // HEX_NUM
         value.move< int > (YY_MOVE (s.value));
         break;
 
-      case 41: // ID
+      case 40: // ID
         value.move< std::string > (YY_MOVE (s.value));
         break;
 

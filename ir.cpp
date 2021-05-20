@@ -18,6 +18,10 @@ void FunctionDef::Dump_Eeyore(std::ostream &os) const {
     for (const auto &inst : _insts) inst->Dump_Eeyore(os, *this);
     os<<"end f_"<<_func_name<<std::endl;
 }
+void FunctionDef::Dump_Eeyore_GLOB(std::ostream &os) const {
+    for (const auto &decl : _decl_insts) decl->Dump_Eeyore(os, *this);
+    for (const auto &inst : _insts) inst->Dump_Eeyore(os, *this);
+}
 void DeclareVarInst::Dump_Eeyore(std::ostream &os, const FunctionDef &func) const{
     os<<"var ";
     _val->Dump_Eeyore(os);

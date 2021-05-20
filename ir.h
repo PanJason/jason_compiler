@@ -54,10 +54,13 @@ void PushDeclInst(Args &&...args){
 ValPtr AddSlot();
 ValPtr AddVarSlot();
 void Dump_Eeyore(std::ostream& os) const;
+void Dump_Eeyore_GLOB(std::ostream& os) const;
 const std::string &func_name() const {return _func_name;}
 std::size_t num_args() const {return _num_args;}
 std::size_t slot_num() const {return _slot_num;}
 TokenType ret_type() const {return _ret_type;}
+const InstPtrList& decl_insts() const {return _decl_insts;}
+const InstPtrList& insts() const {return _insts;}
 
 private:
 std::string _func_name;

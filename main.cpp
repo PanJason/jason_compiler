@@ -13,7 +13,7 @@ int main (int argc, const char *argv[])
   int res = 0;
   driver drv;
   if (argc < 2){
-    std::cerr<<"Usage: "<< argv[0] << "-S [-e|-t] [<input>] [-o <output>] [-p] [-s]"
+    std::cerr<<"Usage: "<< argv[0] << " -S [-e|-t] [<input>] [-o <output>] [-p] [-s]"
              << std::endl;
     return 1;
   }

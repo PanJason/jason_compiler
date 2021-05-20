@@ -37,8 +37,10 @@
 %token ASSIGN SEMI COMMA LLPAREN LRPAREN MLPAREN MRPAREN SLPAREN SRPAREN;
 %token NOT EQ NEQ LT GT LTE GTE PLUS MINUS TIMES OVER MOD AND OR;
 //%token SIN_COMMENT MUL_LCOMMENT MUL_RCOMMENT
-%token ERROR END
-
+%token ERROR 
+%token
+  END  0  "end of file"
+;
 %token <int> OCT_NUM DEC_NUM HEX_NUM
 %token <std::string> ID
 %type  <ASTPtr> program CompUnit Decl ConstDecl ConstDefList ConstDef
