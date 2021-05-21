@@ -152,10 +152,10 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
             auto dest3 = _now_func->AddSlot();
             _now_func->PushDeclInst<DeclareVarInst>(dest3);
             _now_func->PushInst<AssignInst>(dest3, lhs);
-            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest1,dest3,0);
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest1,dest3,std::make_shared<IntVal>(0));
         }
         else{
-            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest1,lhs,0);
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest1,lhs,std::make_shared<IntVal>(0));
         }
         if (!lhs) return LogError("No left side");
         // generate conditional branch
@@ -170,10 +170,10 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
             auto dest4 = _now_func->AddSlot();
             _now_func->PushDeclInst<DeclareVarInst>(dest4);
             _now_func->PushInst<AssignInst>(dest4, rhs);
-            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest2,dest4,0);
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest2,dest4,std::make_shared<IntVal>(0));
         }
         else{
-            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest2,rhs,0);
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest2,rhs,std::make_shared<IntVal>(0));
         }
         _now_func->PushInst<AssignInst>(dest1, std::move(dest2));
         // generate label definition
