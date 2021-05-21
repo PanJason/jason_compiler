@@ -82,6 +82,7 @@ class IRGen{
 
     ValPtr process_value(std::shared_ptr<ConstInitValArrayAST> ast, std::vector<std::size_t>& shape, std::size_t dim, std::vector<int>& result);
     ValPtr process_slot(std::shared_ptr<InitValArrayAST> ast, std::vector<std::size_t>& shape, std::size_t dim, ValPtrList& result);
+    ValPtr process_init_val(std::shared_ptr<InitValArrayAST> ast, std::vector<std::size_t>& shape, std::size_t dim, std::vector<int>& result);
     std::size_t error_num() const {return _error_num;}
 private:
     std::size_t _error_num;

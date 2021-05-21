@@ -715,6 +715,76 @@ ValPtr IRGen::process_value(std::shared_ptr<ConstInitValArrayAST> ast, std::vect
     
     return nullptr;
 }
+ValPtr IRGen::process_init_val(std::shared_ptr<InitValArrayAST> ast, std::vector<std::size_t>& shape, std::size_t dim, std::vector<int>& result){
+    if(ast->init_vals() == nullptr){
+        std::size_t total = 1;
+        for (auto ii : shape){
+            total *= ii;
+        }
+        for(std::size_t ii = 0; ii < total ; ii++){
+            result.push_back(0);
+        }
+        return nullptr;
+    }
+    auto values = std::dynamic_pointer_cast<InitValAST>(ast->init_vals());
+    std::vector<std::size_t> position;
+    //Start from all zeros;
+    for(std::size_t i = 0; i < dim; i++){
+        position.push_back(0);
+    }
+    
+    for(const auto &i: values->exprs()){
+        if(i->is_array == 1){
+            // Is a ConstInitValArrayAST
+            auto sub_ast = std::dynamic_pointer_cast<InitValArrayAST>(i);
+            auto back = dim - 1;
+            while (position.at(back) == 0 && back >= 1){
+                back -=1;
+            }
+            std::vector<std::size_t> sub_shape;
+            for (std::size_t ii = back + 1; ii < dim ;ii++){
+                sub_shape.push_back(shape.at(ii));
+            }
+            process_init_val(sub_ast, sub_shape, dim - 1 - back, result);
+            position.at(back) += 1;
+            while (position.at(back) == shape.at(back) && back >=1 )
+            {
+                position.at(back) = 0;
+                position.at(back-1) += 1;
+                back -= 1;
+            }
+        }
+        else{
+            auto expr = i->Eval(*this);
+            if (!expr) return LogError("Can not evaluate the Init Value of a const Variable");
+            result.push_back(*expr);
+            position.at(dim-1) += 1;
+            auto back = dim -1;
+            while (position.at(back) == shape.at(back) && back >=1 )
+            {
+                position.at(back) = 0;
+                position.at(back-1) += 1;
+                back -= 1;
+            }
+            
+        }
+    }
+    //Padding With Zeros.
+    while (position.at(0)!=shape.at(0))
+    {
+        result.push_back(0);
+        position.at(dim - 1) +=1;
+        auto back = dim -1;
+        while (position.at(back) == shape.at(back) && back >=1 )
+        {
+            position.at(back) = 0;
+            position.at(back-1) += 1;
+            back -= 1;
+        }
+    }
+    
+    return nullptr;
+}
 ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
     if(ast.is_array_def() == 1){
         //2. Generate on Arrays
@@ -982,38 +1052,57 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             #ifdef __DEBUG_IRGEN__
                 std::cout<<"Finishing inserting decl insts in the most complex VarDefAST"<<std::endl;
             #endif
-            //Store the value
-            ValPtrList temp_values;
-            //First have to check _const_init_value points to a single expression or 
-            //ConstInitValArray
-            if (ast.init_val()->is_array == 1){
-                process_slot(std::dynamic_pointer_cast<InitValArrayAST>(ast.init_val()),ste->_shape,ste->_dim, temp_values);
-                assert(temp_values.size() == ste->_symbol_size /4);
-            }
-            else{
-                auto val = ast.init_val()->GenerateIR(*this);
-                if(!val) return LogError("Can not Generate Slot for the Initial Value!");
-                for(size_t i = 0; i < ste->_symbol_size/4 ; i++){
-                    temp_values.push_back(val);
+            if (_now_func->func_name() == "00_GLOBAL"){
+                std::vector<int> temp_const_values;
+                if (ast.init_val()->is_array == 1){
+                    process_init_val(std::dynamic_pointer_cast<InitValArrayAST>(ast.init_val()),ste->_shape,ste->_dim, temp_const_values);
+                    assert(temp_const_values.size() == ste->_symbol_size /4);
+                }
+                else{
+                    auto val = ast.init_val()->Eval(*this);
+                    if(!val) return LogError("Can not Evaluate the Initial Const Value!");
+                    for(size_t i = 0; i < ste->_symbol_size/4 ; i++){
+                        temp_const_values.push_back(*val);
+                    }
+                }
+                for(size_t i = 0; i < ste->_symbol_size ; i+=4){
+                    _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)), std::make_shared<IntVal>(temp_const_values.at(i/4)));
                 }
             }
-            #ifdef __DEBUG_IRGEN__
-                std::cout<<"Finishing generating slots insts in the most complex VarDefAST"<<std::endl;
-            #endif
-            for(size_t i = 0; i < ste->_symbol_size ; i+=4){
-                if(temp_values.at(i/4)->is_array == 1)
-                    {
-                        auto dest1 = _now_func->AddSlot();
-                        _now_func->PushDeclInst<DeclareVarInst>(dest1);
-                        _now_func->PushInst<AssignInst>(dest1, temp_values.at(i/4));
-                        _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)),std::move(dest1));
+            else{
+                //Store the value
+                ValPtrList temp_values;
+                //First have to check _const_init_value points to a single expression or 
+                //ConstInitValArray
+                if (ast.init_val()->is_array == 1){
+                    process_slot(std::dynamic_pointer_cast<InitValArrayAST>(ast.init_val()),ste->_shape,ste->_dim, temp_values);
+                    assert(temp_values.size() == ste->_symbol_size /4);
+                }
+                else{
+                    auto val = ast.init_val()->GenerateIR(*this);
+                    if(!val) return LogError("Can not Generate Slot for the Initial Value!");
+                    for(size_t i = 0; i < ste->_symbol_size/4 ; i++){
+                        temp_values.push_back(val);
                     }
-                else
-                    {_now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)), temp_values.at(i/4));}
+                }
+                #ifdef __DEBUG_IRGEN__
+                    std::cout<<"Finishing generating slots insts in the most complex VarDefAST"<<std::endl;
+                #endif
+                for(size_t i = 0; i < ste->_symbol_size ; i+=4){
+                    if(temp_values.at(i/4)->is_array == 1)
+                        {
+                            auto dest1 = _now_func->AddSlot();
+                            _now_func->PushDeclInst<DeclareVarInst>(dest1);
+                            _now_func->PushInst<AssignInst>(dest1, temp_values.at(i/4));
+                            _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)),std::move(dest1));
+                        }
+                    else
+                        {_now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)), temp_values.at(i/4));}
+                }
+                #ifdef __DEBUG_IRGEN__
+                    std::cout<<"Finishing inserting assign insts in the most complex VarDefAST"<<std::endl;
+                #endif
             }
-            #ifdef __DEBUG_IRGEN__
-                std::cout<<"Finishing inserting assign insts in the most complex VarDefAST"<<std::endl;
-            #endif
             return nullptr;
         }
     }
@@ -1034,7 +1123,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             return nullptr;
         }
         else{
-            auto expr = ast.init_val()->GenerateIR(*this);
+            auto expr = _now_func->func_name() == "00_GLOBAL" ? (std::make_shared<IntVal>(*(ast.init_val()->Eval(*this)))):(ast.init_val()->GenerateIR(*this));
             if (!expr) return LogError("Can not Geneate the Init Value of a Variable");
             //Create slot
             auto slot = _now_func->AddVarSlot();
@@ -1115,3 +1204,6 @@ void IRGen::Dump_Eeyore(std::ostream &os) const {
 //Todo: 2 Bugs left
 //Todo: 1. In the global area no calculation is allowed
 //Todo: 2. In evaluating ArrayAST, the function table entry should be looked up first.
+//Todo: 1. The initial value expression of the const variable must be const expressions which 
+//could be evaluated
+//Todo: 2. Change the sequence of searching
