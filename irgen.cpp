@@ -231,7 +231,7 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     if(!base) return LogError(
         "Symbol has not been defined"
     );
-    auto entry = _symbol_table->GetItem(ast.id(),true);
+    
 
     //Generate a series of add and times like DimensionAST.
     //Not finished yet.
@@ -240,6 +240,7 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     _now_func->PushDeclInst<DeclareVarInst>(dest);
     auto middle = _now_func->AddSlot();
     _now_func->PushDeclInst<DeclareVarInst>(middle);
+    auto entry = _symbol_table->GetItem(ast.id(),true);
     if(entry){
         pr_debug("Found entry in _vars");
         std::size_t offset = 0;
@@ -1110,3 +1111,7 @@ void IRGen::Dump_Eeyore(std::ostream &os) const {
         }
     }
 }
+
+//Todo: 2 Bugs left
+//Todo: 1. In the global area no calculation is allowed
+//Todo: 2. In evaluating ArrayAST, the function table entry should be looked up first.
