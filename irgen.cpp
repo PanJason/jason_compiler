@@ -590,6 +590,9 @@ ValPtr IRGen::GenerateOn(const FuncDefAST& ast){
     #ifdef __DEBUG_IRGEN__
         std::cout<<"Finishing Initializing Block Content of "<<_now_func->func_name()<<std::endl;
     #endif
+    if(ast.func_type() == yy::parser::token_type::TOK_VOID){
+        _now_func->PushInst<ReturnInst>(nullptr);
+    }
     return nullptr;
 }
 
