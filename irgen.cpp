@@ -147,7 +147,15 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
         auto lhs = ast.lhs()->GenerateIR(*this);
         if (!lhs) return LogError("No left side");
         // generate conditional branch
-        _now_func->PushInst<BranchInst>(ast.op() == yy::parser::token::TOK_OR, lhs, end_logic);
+        if (lhs->is_array == 1){
+            auto dest1 = _now_func->AddSlot();
+            _now_func->PushDeclInst<DeclareVarInst>(dest1);
+            _now_func->PushInst<AssignInst>(dest1, std::move(lhs));
+            _now_func->PushInst<BranchInst>(ast.op() == yy::parser::token::TOK_OR, std::move(dest1), end_logic);
+        }
+        else{
+            _now_func->PushInst<BranchInst>(ast.op() == yy::parser::token::TOK_OR, lhs, end_logic);
+        }
         // generate rhs
         auto rhs = ast.rhs()->GenerateIR(*this);
         if (!rhs) return LogError("No right side");
@@ -428,7 +436,15 @@ ValPtr IRGen::GenerateOn(const WhileAST& ast){
         std::cout<<"Finishing Generating condition"<<std::endl;
     #endif
     auto false_branch = std::make_shared<LabelVal>();
-    _now_func->PushInst<BranchInst>(false, std::move(cond), false_branch);
+    if (cond->is_array == 1){
+        auto dest = _now_func->AddSlot();
+        _now_func->PushDeclInst<DeclareVarInst>(dest);
+        _now_func->PushInst<AssignInst>(dest, std::move(cond));
+        _now_func->PushInst<BranchInst>(false, std::move(dest), false_branch);
+    }
+    else{
+        _now_func->PushInst<BranchInst>(false, std::move(cond), false_branch);
+    }
     #ifdef __DEBUG_IRGEN__
         std::cout<<"Finishing Generating False Jump"<<std::endl;
     #endif
