@@ -231,8 +231,6 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     if(!base) return LogError(
         "Symbol has not been defined"
     );
-    
-
     //Generate a series of add and times like DimensionAST.
     //Not finished yet.
     auto dims = std::dynamic_pointer_cast<DimensionAST>(ast.exprs());
@@ -240,8 +238,13 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     _now_func->PushDeclInst<DeclareVarInst>(dest);
     auto middle = _now_func->AddSlot();
     _now_func->PushDeclInst<DeclareVarInst>(middle);
-    auto entry = _symbol_table->GetItem(ast.id(),true);
-    if(entry){
+    auto func_table = _func_table.find(_now_func->func_name());
+    //if(func_table == _func_table.end()) return LogError("Current Function has no Function Table!");
+    pr_debug("Found entry in _func_table");
+    auto func_table_entry = func_table->second.find(ast.id());
+    if(func_table_entry == func_table->second.end()){
+        auto entry = _symbol_table->GetItem(ast.id(),true);
+        if (entry == nullptr) return LogError("Symbol Not Found!");
         pr_debug("Found entry in _vars");
         std::size_t offset = 0;
         pr_debug("Symbol Size is ");
@@ -268,12 +271,6 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
         assert(start == 1);
     }
     else{
-        auto func_table = _func_table.find(_now_func->func_name());
-        if(func_table == _func_table.end()) return LogError("Current Function has no Function Table!");
-        pr_debug("Found entry in _func_table");
-        auto func_table_entry = func_table->second.find(ast.id());
-        if(func_table_entry == func_table->second.end()) return LogError("Symbol has not been defined in the function table!");
-        //Found in function table
         std::size_t offset = 0;
         pr_debug("Symbol Size is ");
         pr_debug(func_table_entry->second->symbol_size());
@@ -1202,8 +1199,5 @@ void IRGen::Dump_Eeyore(std::ostream &os) const {
 }
 
 //Todo: 2 Bugs left
-//Todo: 1. In the global area no calculation is allowed
 //Todo: 2. In evaluating ArrayAST, the function table entry should be looked up first.
-//Todo: 1. The initial value expression of the const variable must be const expressions which 
-//could be evaluated
 //Todo: 2. Change the sequence of searching
