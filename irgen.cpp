@@ -44,7 +44,10 @@ std::optional<int> IRGen::EvalOn(const IntAST& ast){
 }
 std::optional<int> IRGen::EvalOn(const IdAST& ast)
 {
+    pr_debug("Evaluating Const ID");
+    pr_debug("ID is "+ast.id());
     auto iter = _const_vars->GetItem(ast.id(),true);
+    pr_debug(iter->at(0));
     if(iter == nullptr) assert("Not a const varible or evaluating unknown const variable");
     return iter->front();
 }
@@ -223,6 +226,7 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
 //Here ArrayAST only appear in the LVal and LVal won't appear in the constdef and vardef
 //which would be generated explicitly later on.
 ValPtr IRGen::GenerateOn(const ArrayAST& ast){
+    pr_debug("Entering ArrayAST for LVal");
     auto base = _vars->GetItem(ast.id());
     if(!base) return LogError(
         "Symbol has not been defined"
@@ -237,7 +241,12 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     auto middle = _now_func->AddSlot();
     _now_func->PushDeclInst<DeclareVarInst>(middle);
     if(entry){
+        pr_debug("Found entry in _vars");
         std::size_t offset = 0;
+        pr_debug("Symbol Size is ");
+        pr_debug(entry->symbol_size());
+        pr_debug("Dim is ");
+        pr_debug(entry->dim());
         std::size_t start = entry->symbol_size() / sizeof(int);
         _now_func->PushInst<AssignInst>(dest, std::make_shared<IntVal>(0));
         for (std::size_t i = 0; i < entry->dim(); i++){
@@ -260,10 +269,15 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     else{
         auto func_table = _func_table.find(_now_func->func_name());
         if(func_table == _func_table.end()) return LogError("Current Function has no Function Table!");
+        pr_debug("Found entry in _func_table");
         auto func_table_entry = func_table->second.find(ast.id());
         if(func_table_entry == func_table->second.end()) return LogError("Symbol has not been defined in the function table!");
         //Found in function table
         std::size_t offset = 0;
+        pr_debug("Symbol Size is ");
+        pr_debug(func_table_entry->second->symbol_size());
+        pr_debug("Dim is ");
+        pr_debug(func_table_entry->second->dim());
         std::size_t start = func_table_entry->second->symbol_size()/sizeof(int);
         //Dimension n , n-1 dimensions in the vector.
         _now_func->PushInst<AssignInst>(dest, std::make_shared<IntVal>(0));
@@ -466,9 +480,12 @@ ValPtr IRGen::GenerateOn(const CondAST& ast){
 //There is problem because Eeyore does not allow 
 
 ValPtr IRGen::GenerateOn(const AssignAST& ast){
+    pr_debug("Entering AssignAST");
     auto expr = ast.expr()->GenerateIR(*this);
+    pr_debug("Finishing Evaluating the expr");
     if(!expr) return nullptr;
     auto slot = ast.lval()->GenerateIR(*this);
+    pr_debug("Finishing Evaluating the LVal");
     if(!slot) return LogError("Symbol Undefined");
     if(ast.expr()->is_lval_array == 1 && ast.lval()->is_lval_array == 1){
         auto dest = _now_func->AddSlot();
@@ -479,6 +496,7 @@ ValPtr IRGen::GenerateOn(const AssignAST& ast){
     else{
         _now_func->PushInst<AssignInst>(std::move(slot), std::move(expr));
     }
+    pr_debug("Leaving AssignAST");
     return nullptr;
 }
 
@@ -765,7 +783,12 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         _symbol_table->AddItem(ast.id(), std::move(ste));
         //Evaluate and Store init value;
         if(_const_vars->GetItem(ast.id())) return LogError("Const Variable already been defined!");
-        _const_vars->AddItem(ast.id(), std::make_shared<std::vector<int> >(*expr));
+        pr_debug("Const Value is ");
+        pr_debug(*expr);
+        pr_debug("Const ID is ")
+        pr_debug(ast.id());
+        std::vector<int> tmp = {*expr};
+        _const_vars->AddItem(ast.id(), std::make_shared<std::vector<int> >(tmp));
         _now_func->PushInst<AssignInst>(std::move(slot), std::make_shared<IntVal>((*expr)));
         return nullptr;
     }
@@ -883,6 +906,7 @@ ValPtr IRGen::process_slot(std::shared_ptr<InitValArrayAST> ast, std::vector<std
 ValPtr IRGen::GenerateOn(const VarDefAST& ast){
     if(ast.is_array_def() == 1){
         if (ast.init_val() == nullptr){
+            pr_debug("Entering VarDef of Array with no init Value");
             //2. Generate on Arrays
             //Evaluate expr or {expr, expr, {expr, expr},{expr}}
             //To-do
@@ -904,6 +928,8 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             auto ste = std::make_shared<SymbolTableEntry>(yy::parser::token::TOK_INT, 0, 1);
             ste->_dim = dim_list.size();
             for(const auto &i: dim_list){
+                pr_debug("Each Dimension is ")
+                pr_debug(*i);
                 ste->_symbol_size *= (*i);
                 ste->_shape.push_back(*i);
             }
