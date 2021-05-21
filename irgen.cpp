@@ -145,32 +145,40 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
     if(ast.op()==yy::parser::token::TOK_AND || ast.op() == yy::parser::token::TOK_OR){
         auto end_logic = std::make_shared<LabelVal>();
         auto lhs = ast.lhs()->GenerateIR(*this);
-        if (!lhs) return LogError("No left side");
-        // generate conditional branch
-        if (lhs->is_array == 1){
-            auto dest1 = _now_func->AddSlot();
-            _now_func->PushDeclInst<DeclareVarInst>(dest1);
-            _now_func->PushInst<AssignInst>(dest1, std::move(lhs));
-            _now_func->PushInst<BranchInst>(ast.op() == yy::parser::token::TOK_OR, std::move(dest1), end_logic);
+        auto dest1 = _now_func->AddSlot();
+        _now_func->PushDeclInst<DeclareVarInst>(dest1);
+        if (lhs->is_array == 1)
+        {
+            auto dest3 = _now_func->AddSlot();
+            _now_func->PushDeclInst<DeclareVarInst>(dest3);
+            _now_func->PushInst<AssignInst>(dest3, lhs);
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest1,dest3,0);
         }
         else{
-            _now_func->PushInst<BranchInst>(ast.op() == yy::parser::token::TOK_OR, lhs, end_logic);
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest1,lhs,0);
         }
+        if (!lhs) return LogError("No left side");
+        // generate conditional branch
+        _now_func->PushInst<BranchInst>(ast.op() == yy::parser::token::TOK_OR, dest1, end_logic);
         // generate rhs
         auto rhs = ast.rhs()->GenerateIR(*this);
         if (!rhs) return LogError("No right side");
-        if (rhs->is_array == 1){
-            auto dest2 = _now_func->AddSlot();
-            _now_func->PushDeclInst<DeclareVarInst>(dest2);
-            _now_func->PushInst<AssignInst>(dest2, rhs);
-            _now_func->PushInst<AssignInst>(lhs, std::move(dest2));
+        auto dest2 = _now_func->AddSlot();
+        _now_func->PushDeclInst<DeclareVarInst>(dest2);
+        if (rhs->is_array == 1)
+        {
+            auto dest4 = _now_func->AddSlot();
+            _now_func->PushDeclInst<DeclareVarInst>(dest4);
+            _now_func->PushInst<AssignInst>(dest4, rhs);
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest2,dest4,0);
         }
         else{
-            _now_func->PushInst<AssignInst>(lhs, rhs);
+            _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest2,rhs,0);
         }
+        _now_func->PushInst<AssignInst>(dest1, std::move(dest2));
         // generate label definition
         _now_func->PushInst<LabelInst>(std::move(end_logic));
-        return lhs;
+        return dest1;
     }
     else{
         auto lhs = ast.lhs()->GenerateIR(*this);
