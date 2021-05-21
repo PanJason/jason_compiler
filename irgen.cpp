@@ -137,7 +137,15 @@ ValPtr IRGen::GenerateOn(const UnaryAST& ast){
     if (!opr) return nullptr;
     auto dest = _now_func->AddSlot();
     _now_func->PushDeclInst<DeclareVarInst>(dest);
-    _now_func->PushInst<UnaryInst>(ast.op(), dest, std::move(opr));
+    if(opr->is_array == 1){
+        auto dest1 = _now_func->AddSlot();
+        _now_func->PushDeclInst<DeclareVarInst>(dest1);
+        _now_func->PushInst<AssignInst>(dest1, std::move(opr));
+        _now_func->PushInst<UnaryInst>(ast.op(), dest, std::move(dest1));
+    }
+    else{
+        _now_func->PushInst<UnaryInst>(ast.op(), dest, std::move(opr));
+    }
     return dest;
 }
 
