@@ -145,13 +145,21 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
     if(ast.op()==yy::parser::token::TOK_AND || ast.op() == yy::parser::token::TOK_OR){
         auto end_logic = std::make_shared<LabelVal>();
         auto lhs = ast.lhs()->GenerateIR(*this);
-        if (!lhs) return nullptr;
+        if (!lhs) return LogError("No left side");
         // generate conditional branch
         _now_func->PushInst<BranchInst>(ast.op() == yy::parser::token::TOK_OR, lhs, end_logic);
         // generate rhs
         auto rhs = ast.rhs()->GenerateIR(*this);
-        if (!rhs) return nullptr;
-        _now_func->PushInst<AssignInst>(lhs, rhs);
+        if (!rhs) return LogError("No right side");
+        if (rhs->is_array == 1){
+            auto dest2 = _now_func->AddSlot();
+            _now_func->PushDeclInst<DeclareVarInst>(dest2);
+            _now_func->PushInst<AssignInst>(dest2, rhs);
+            _now_func->PushInst<AssignInst>(lhs, std::move(dest2));
+        }
+        else{
+            _now_func->PushInst<AssignInst>(lhs, rhs);
+        }
         // generate label definition
         _now_func->PushInst<LabelInst>(std::move(end_logic));
         return lhs;
