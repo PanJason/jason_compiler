@@ -371,7 +371,15 @@ ValPtr IRGen::GenerateOn(const FuncCallAST& ast){
         for (const auto &i: param_list->const_exprs()){
             auto arg = i->GenerateIR(*this);
             if (!arg) return nullptr;
-            args.push_back(std::move(arg));
+            if (arg->is_array == 1){
+                auto dest1 = _now_func->AddSlot();
+                _now_func->PushDeclInst<DeclareVarInst>(dest1);
+                _now_func->PushInst<AssignInst>(dest1, std::move(arg));
+                args.push_back(std::move(dest1));
+            }
+            else{
+                args.push_back(std::move(arg));
+            }
         }
     }
     else{
