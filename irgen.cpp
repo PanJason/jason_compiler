@@ -394,7 +394,15 @@ ValPtr IRGen::GenerateOn(const IfAST& ast){
     auto false_branch = std::make_shared<LabelVal>();
     auto end_if = ast.else_then() ? std::make_shared<LabelVal>() : nullptr;
     // generate contional branch
-    _now_func->PushInst<BranchInst>(false, std::move(cond), false_branch);
+    if (cond->is_array == 1){
+        auto dest = _now_func->AddSlot();
+        _now_func->PushDeclInst<DeclareVarInst>(dest);
+        _now_func->PushInst<AssignInst>(dest, std::move(cond));
+        _now_func->PushInst<BranchInst>(false, std::move(dest), false_branch);
+    }
+    else{
+        _now_func->PushInst<BranchInst>(false, std::move(cond), false_branch);
+    }
     // generate the true branch
     ast.then()->GenerateIR(*this);
     if (ast.else_then()) {_now_func->PushInst<JumpInst>(end_if);pr_debug("Generating Label for else_then");}

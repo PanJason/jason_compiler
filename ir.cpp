@@ -112,8 +112,8 @@ void UnaryInst::Dump_Eeyore(std::ostream &os, const FunctionDef &func) const{
     os<<" = ";
     switch (_op) {
       case yy::parser::token::TOK_PLUS: {break;}
-      case yy::parser::token::TOK_MINUS: {os<<" -"; break;}
-      case yy::parser::token::TOK_NOT: {os<<" !"; break;}
+      case yy::parser::token::TOK_MINUS: {os<<"-"; break;}
+      case yy::parser::token::TOK_NOT: {os<<"!"; break;}
       default: assert(false && "unknown binary operator");
     }
     _opr->Dump_Eeyore(os);
