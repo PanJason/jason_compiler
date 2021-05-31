@@ -9,6 +9,7 @@
 #ifndef __IRGEN_H
 #define __IRGEN_H
 #include <memory>
+#include <sstream>
 #include "ir.h"
 #include "global.h"
 #include "guard.h"
@@ -40,6 +41,7 @@ class IRGen{
 
     //dump eeyore representations
     void Dump_Eeyore(std::ostream &os) const;
+    void Dump_Tigger(std::ostream &os) const;
 
     //vistor methods here
     ValPtr GenerateOn(const CompUnitAST& ast);
@@ -109,5 +111,6 @@ private:
 
     //This map is used to store the values of const variables and arrays.
     xstl::NestedMapPtr<std::string, ConVarPTR > _const_vars;
+    std::stringstream global_assign_Tigger;
 };
 #endif

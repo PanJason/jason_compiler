@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include "driver.h"
+int dump_what = -1;
 
 int main (int argc, const char *argv[])
 {
@@ -22,16 +23,50 @@ int main (int argc, const char *argv[])
       {drv.trace_parsing = true; ++i;}
     else if (argv[i] == std::string ("-s"))
       {drv.trace_scanning = true; ++i;}
-    else if (argv[i] == std::string ("-S"))
+    else if (argv[i] == std::string ("-S") && argv[i+1] == std::string ("-e"))
       //Compile it
-      { if (argv[i+1] == std::string ("-e"))
-        {drv.compile(argv[i+2]); i+=3;}
+      { 
+        drv.compile(argv[i+2]);
+        dump_what = 0;
+        i+=3;
+      }
+    else if (argv[i] == std::string ("-S") && argv[i+1] == std::string ("-t"))
+      {
+        drv.compile(argv[i+2]);
+        dump_what = 1;
+        i+=3;
+      }
+    else if (argv[i] == std::string ("-S"))
+      {
+        drv.compile(argv[i+1]);
+        dump_what = 2;
+        i+=2;
       }
     else if (argv[i] == std::string("-o"))
       {
-        std::ofstream ofs(argv[i+1]);
-        drv.Dump_Eeyore(ofs);
-        i+=2;
+        switch (dump_what)
+        {
+        case 0:{
+          std::ofstream ofs(argv[i+1]);
+          drv.Dump_Eeyore(ofs);
+          i+=2;
+          break;}
+        case 1: {
+          std::ofstream ofs(argv[i+1]);
+          //drv.Dump_Tigger(ofs);
+          i+=2;
+          break;
+        }
+        case 2: {
+          std::ofstream ofs(argv[i+1]);
+          //drv.Dump_RISC_V(ofs);
+          i+=2;
+          break;
+        }
+        default:
+          i+=2;
+          break;
+        }
       }
     else
       {res = 1; std::cerr<<"Unknown Parameters!"<<std::endl; break;}

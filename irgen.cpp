@@ -136,9 +136,11 @@ ValPtr IRGen::GenerateOn(const UnaryAST& ast){
     auto opr = ast.opr()->GenerateIR(*this);
     if (!opr) return nullptr;
     auto dest = _now_func->AddSlot();
+    _now_func->add_cur_offset(4);
     _now_func->PushDeclInst<DeclareVarInst>(dest);
     if(opr->is_array == 1){
         auto dest1 = _now_func->AddSlot();
+        _now_func->add_cur_offset(4);
         _now_func->PushDeclInst<DeclareVarInst>(dest1);
         _now_func->PushInst<AssignInst>(dest1, std::move(opr));
         _now_func->PushInst<UnaryInst>(ast.op(), dest, std::move(dest1));
@@ -154,10 +156,12 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
         auto end_logic = std::make_shared<LabelVal>();
         auto lhs = ast.lhs()->GenerateIR(*this);
         auto dest1 = _now_func->AddSlot();
+        _now_func->add_cur_offset(4);
         _now_func->PushDeclInst<DeclareVarInst>(dest1);
         if (lhs->is_array == 1)
         {
             auto dest3 = _now_func->AddSlot();
+            _now_func->add_cur_offset(4);
             _now_func->PushDeclInst<DeclareVarInst>(dest3);
             _now_func->PushInst<AssignInst>(dest3, lhs);
             _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest1,dest3,std::make_shared<IntVal>(0));
@@ -172,10 +176,12 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
         auto rhs = ast.rhs()->GenerateIR(*this);
         if (!rhs) return LogError("No right side");
         auto dest2 = _now_func->AddSlot();
+        _now_func->add_cur_offset(4);
         _now_func->PushDeclInst<DeclareVarInst>(dest2);
         if (rhs->is_array == 1)
         {
             auto dest4 = _now_func->AddSlot();
+            _now_func->add_cur_offset(4);
             _now_func->PushDeclInst<DeclareVarInst>(dest4);
             _now_func->PushInst<AssignInst>(dest4, rhs);
             _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_NEQ,dest2,dest4,std::make_shared<IntVal>(0));
@@ -193,12 +199,15 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
         auto rhs = ast.rhs()->GenerateIR(*this);
         if(!lhs || !rhs) return nullptr;
         auto dest = _now_func->AddSlot();
+        _now_func->add_cur_offset(4);
         _now_func->PushDeclInst<DeclareVarInst>(dest);
         if (lhs->is_array == 1 && rhs->is_array == 1){
             auto dest1 = _now_func->AddSlot();
+            _now_func->add_cur_offset(4);
             _now_func->PushDeclInst<DeclareVarInst>(dest1);
             _now_func->PushInst<AssignInst>(dest1, lhs);
             auto dest2 = _now_func->AddSlot();
+            _now_func->add_cur_offset(4);
             _now_func->PushDeclInst<DeclareVarInst>(dest2);
             _now_func->PushInst<AssignInst>(dest2, rhs);
             _now_func->PushInst<BinaryInst>(ast.op(), dest, dest1, dest2);
@@ -207,6 +216,7 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
             if (lhs->is_array == 1)
             {
                 auto dest1 = _now_func->AddSlot();
+                _now_func->add_cur_offset(4);
                 _now_func->PushDeclInst<DeclareVarInst>(dest1);
                 _now_func->PushInst<AssignInst>(dest1, lhs);
                 _now_func->PushInst<BinaryInst>(ast.op(), dest, dest1, std::move(rhs));
@@ -214,6 +224,7 @@ ValPtr IRGen::GenerateOn(const BinaryAST& ast){
             else{
                 if (rhs->is_array == 1){
                     auto dest2 = _now_func->AddSlot();
+                    _now_func->add_cur_offset(4);
                     _now_func->PushDeclInst<DeclareVarInst>(dest2);
                     _now_func->PushInst<AssignInst>(dest2, rhs);
                     _now_func->PushInst<BinaryInst>(ast.op(), dest, std::move(lhs), dest2);
@@ -267,8 +278,10 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
     //Not finished yet.
     auto dims = std::dynamic_pointer_cast<DimensionAST>(ast.exprs());
     auto dest = _now_func->AddSlot();
+    _now_func->add_cur_offset(4);
     _now_func->PushDeclInst<DeclareVarInst>(dest);
     auto middle = _now_func->AddSlot();
+    _now_func->add_cur_offset(4);
     _now_func->PushDeclInst<DeclareVarInst>(middle);
     auto func_table = _func_table.find(_now_func->func_name());
     //if(func_table == _func_table.end()) return LogError("Current Function has no Function Table!");
@@ -291,6 +304,7 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
             if(!tmp) assert("Fail to evaluate a dimension!");
             if(tmp->is_array ==1){
                 auto dest2 = _now_func->AddSlot();
+                _now_func->add_cur_offset(4);
                 _now_func->PushDeclInst<DeclareVarInst>(dest2);
                 _now_func->PushInst<AssignInst>(dest2, std::move(tmp));
                 _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(dest2), std::make_shared<IntVal>(start));
@@ -316,6 +330,7 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
             if(!tmp) assert("Fail to evaluate a dimension!");
             if(tmp->is_array ==1){
                 auto dest2 = _now_func->AddSlot();
+                _now_func->add_cur_offset(4);
                 _now_func->PushDeclInst<DeclareVarInst>(dest2);
                 _now_func->PushInst<AssignInst>(dest2, std::move(tmp));
                 _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_TIMES, middle, std::move(dest2), std::make_shared<IntVal>(start));
@@ -331,6 +346,7 @@ ValPtr IRGen::GenerateOn(const ArrayAST& ast){
         if(!tmp) assert("Fail to evaluate a dimension!");
         if(tmp->is_array ==1){
             auto dest3 = _now_func->AddSlot();
+            _now_func->add_cur_offset(4);
             _now_func->PushDeclInst<DeclareVarInst>(dest3);
             _now_func->PushInst<AssignInst>(dest3, std::move(tmp));
             _now_func->PushInst<BinaryInst>(yy::parser::token::TOK_PLUS, dest, dest, std::move(dest3));
@@ -349,6 +365,7 @@ ValPtr IRGen::GenerateOn(const ReturnAST& ast){
         if(!expr) return nullptr;
         if (expr->is_array == 1){
             auto dest = _now_func->AddSlot();
+            _now_func->add_cur_offset(4);
             _now_func->PushDeclInst<DeclareVarInst>(dest);
             _now_func->PushInst<AssignInst>(dest, std::move(expr));
             _now_func->PushInst<ReturnInst>(std::move(dest));
@@ -381,6 +398,7 @@ ValPtr IRGen::GenerateOn(const FuncCallAST& ast){
             if (!arg) return nullptr;
             if (arg->is_array == 1){
                 auto dest1 = _now_func->AddSlot();
+                _now_func->add_cur_offset(4);
                 _now_func->PushDeclInst<DeclareVarInst>(dest1);
                 _now_func->PushInst<AssignInst>(dest1, std::move(arg));
                 args.push_back(std::move(dest1));
@@ -401,6 +419,7 @@ ValPtr IRGen::GenerateOn(const FuncCallAST& ast){
     
     if(it->second->ret_type()==yy::parser::token::TOK_INT){
         auto dest = _now_func->AddSlot();
+        _now_func->add_cur_offset(4);
         _now_func->PushDeclInst<DeclareVarInst>(dest);
         _now_func->PushInst<FuncCallInst>(dest, it->second, std::move(args));
         return dest;
@@ -428,6 +447,7 @@ ValPtr IRGen::GenerateOn(const IfAST& ast){
     // generate contional branch
     if (cond->is_array == 1){
         auto dest = _now_func->AddSlot();
+        _now_func->add_cur_offset(4);
         _now_func->PushDeclInst<DeclareVarInst>(dest);
         _now_func->PushInst<AssignInst>(dest, std::move(cond));
         _now_func->PushInst<BranchInst>(false, std::move(dest), false_branch);
@@ -462,6 +482,7 @@ ValPtr IRGen::GenerateOn(const WhileAST& ast){
     auto false_branch = std::make_shared<LabelVal>();
     if (cond->is_array == 1){
         auto dest = _now_func->AddSlot();
+        _now_func->add_cur_offset(4);
         _now_func->PushDeclInst<DeclareVarInst>(dest);
         _now_func->PushInst<AssignInst>(dest, std::move(cond));
         _now_func->PushInst<BranchInst>(false, std::move(dest), false_branch);
@@ -543,6 +564,7 @@ ValPtr IRGen::GenerateOn(const AssignAST& ast){
     if(!slot) return LogError("Symbol Undefined");
     if(ast.expr()->is_lval_array == 1 && ast.lval()->is_lval_array == 1){
         auto dest = _now_func->AddSlot();
+        _now_func->add_cur_offset(4);
         _now_func->PushDeclInst<DeclareVarInst>(dest);
         _now_func->PushInst<AssignInst>(dest, std::move(expr));
         _now_func->PushInst<AssignInst>(std::move(slot), std::move(dest));
@@ -865,6 +887,7 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
             ste->_shape.push_back(*i);
         }
         //Insert Array Declaration Instruction
+        _now_func->add_cur_offset(ste->symbol_type());
         _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
         _symbol_table->AddItem(ast.id(), ste);
         //Store the value
@@ -896,6 +919,7 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         if (!expr) return LogError("Can not evaluate the Init Value of a const Variable");
         //Create slot
         auto slot = _now_func->AddVarSlot();
+        _now_func->add_cur_offset(4);
         //Add slot to _vars
         if (!_vars->AddItem(ast.id(), slot)) {
             return LogError("symbol has already been defined");
@@ -1058,6 +1082,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
                 ste->_shape.push_back(*i);
             }
             //Insert Array Declaration Instruction
+            _now_func->add_cur_offset(ste->symbol_size());
             _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
             _symbol_table->AddItem(ast.id(), ste);
             return nullptr;
@@ -1100,6 +1125,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
                 std::cout<<"Finishing creating entry in the most complex VarDefAST"<<std::endl;
             #endif
             //Insert Array Declaration Instruction
+            _now_func->add_cur_offset(ste->symbol_size());
             _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
             _symbol_table->AddItem(ast.id(), ste);
             #ifdef __DEBUG_IRGEN__
@@ -1145,6 +1171,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
                     if(temp_values.at(i/4)->is_array == 1)
                         {
                             auto dest1 = _now_func->AddSlot();
+                            _now_func->add_cur_offset(4);
                             _now_func->PushDeclInst<DeclareVarInst>(dest1);
                             _now_func->PushInst<AssignInst>(dest1, temp_values.at(i/4));
                             _now_func->PushInst<AssignInst>(std::make_shared<ArrayRefVal>(slot,std::make_shared<IntVal>(i)),std::move(dest1));
@@ -1164,6 +1191,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
         if (ast.init_val() == nullptr){
             //Create slot
             auto slot = _now_func->AddVarSlot();
+            _now_func->add_cur_offset(4);
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("symbol has already been defined");
@@ -1180,6 +1208,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             if (!expr) return LogError("Can not Geneate the Init Value of a Variable");
             //Create slot
             auto slot = _now_func->AddVarSlot();
+            _now_func->add_cur_offset(4);
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("symbol has already been defined");
@@ -1193,6 +1222,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             if(expr->is_array == 1)
                 {
                     auto dest1 = _now_func->AddSlot();
+                    _now_func->add_cur_offset(4);
                     _now_func->PushDeclInst<DeclareVarInst>(dest1);
                     _now_func->PushInst<AssignInst>(dest1, std::move(expr));
                     _now_func->PushInst<AssignInst>(std::move(slot),std::move(dest1));
