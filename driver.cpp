@@ -51,3 +51,7 @@ int driver::Dump_Eeyore(std::ostream &os){
   irgen.Dump_Eeyore(os);
   return 0;
 }
+int driver::Dump_Tigger(std::ostream &os){
+  irgen.Dump_Tigger(os);
+  return 0;
+}

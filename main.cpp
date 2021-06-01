@@ -53,7 +53,7 @@ int main (int argc, const char *argv[])
           break;}
         case 1: {
           std::ofstream ofs(argv[i+1]);
-          //drv.Dump_Tigger(ofs);
+          drv.Dump_Tigger(ofs);
           i+=2;
           break;
         }
