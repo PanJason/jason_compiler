@@ -24,6 +24,9 @@ void FunctionDef::Dump_Tigger(std::ostream &os, std::stringstream& global_inst) 
     if(_func_name == "main"){
         os<<global_inst.str();
     }
+    for (std::size_t i = 0; i < _num_args; ++i) {
+        os << "store a"<<i<<" "<<i<<std::endl;
+    }
     for (const auto &inst: _insts) inst->Dump_Tigger(os, *this);
     os<<"end f_"<<_func_name<<std::endl;
 }
@@ -240,9 +243,6 @@ void BranchInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const{
     os<<std::endl;
 }
 void FuncCallInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const{
-    for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "store a"<<i<<" "<<(func.cur_offset() + i * 4)/4<<std::endl;
-    }
     std::size_t j = 0;
     for(const auto &i: _args){
         i->Dump_Tigger_Read(os);
@@ -251,7 +251,7 @@ void FuncCallInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const
     os<<"call f_"<<_func->func_name()<<std::endl;
     os<<kResultReg<<" = a0"<<std::endl;
     for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "load "<<(func.cur_offset() + i * 4)/4<<" a"<<i<<std::endl;
+        os << "load "<<i<<" a"<<i<<std::endl;
     }
     _dest->Dump_Tigger_Write(os);
 }
@@ -264,9 +264,6 @@ void ReturnInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const{
 
 //2*FuncDef Bugs in load store loadaddr
 void VoidFuncCallInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const{
-    for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "store a"<<i<<" "<<(func.cur_offset() + i * 4)/4<<std::endl;
-    }
     std::size_t j = 0;
     for(const auto &i: _args){
         i->Dump_Tigger_Read(os);
@@ -274,7 +271,7 @@ void VoidFuncCallInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) c
     }
     os<<"call f_"<<_func->func_name()<<std::endl;
     for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "load "<<(func.cur_offset() + i * 4)/4<<" a"<<i<<std::endl;
+        os << "load "<<i<<" a"<<i<<std::endl;
     }
 }
 
@@ -284,13 +281,13 @@ void SlotVal::Dump_Tigger(std::ostream &os ) const{
     os<<_offset;
 }
 void SlotVal::Dump_Tigger_Read(std::ostream &os ) const{
-    os<<"load "<<_offset/4<<" "<<kResultReg<<std::endl;
+    os<<"load "<<(_offset/4 + 8)<<" "<<kResultReg<<std::endl;
 }
 void SlotVal::Dump_Tigger_Write(std::ostream &os ) const{
-    os<<"store "<<kResultReg<<" "<<_offset/4<<std::endl;
+    os<<"store "<<kResultReg<<" "<<_offset/4 + 8<<std::endl;
 }
 void SlotVal::Dump_Tigger_offset(std::ostream &os ) const{
-    os<<_offset/4;
+    os<<_offset/4 + 8;
 }
 void VarSlotVal::Dump_Tigger(std::ostream &os ) const{
     if (_is_global == 1){
@@ -305,7 +302,7 @@ void VarSlotVal::Dump_Tigger_offset(std::ostream &os ) const{
         os<<"v"<<_id;
     }
     else{
-        os<<_offset/4;
+        os<<_offset/4 + 8;
     }
 }
 void VarSlotVal::Dump_Tigger_Read(std::ostream &os ) const{
@@ -319,10 +316,10 @@ void VarSlotVal::Dump_Tigger_Read(std::ostream &os ) const{
     }
     else{
         if (_is_addr){
-            os<<"loadaddr "<<_offset/4<<" "<<kResultReg<<std::endl;
+            os<<"loadaddr "<<_offset/4 + 8<<" "<<kResultReg<<std::endl;
         }
         else{
-            os<<"load "<<_offset/4<<" "<<kResultReg<<std::endl;
+            os<<"load "<<_offset/4 + 8 <<" "<<kResultReg<<std::endl;
         }
     }
 }
@@ -332,17 +329,17 @@ void VarSlotVal::Dump_Tigger_Write(std::ostream &os ) const{
         os<<kArrReg<<"[0]"<<" = "<<kResultReg<<std::endl;
     }
     else{
-        os<<"store "<<kResultReg<<" "<<_offset/4<<std::endl;
+        os<<"store "<<kResultReg<<" "<<_offset/4 + 8<<std::endl;
     }
 }
 void ArgRefVal::Dump_Tigger(std::ostream &os ) const{
     os<<"a"<<_id;
 }
 void ArgRefVal::Dump_Tigger_Read(std::ostream &os ) const{
-    os<<kResultReg<<" = a"<<_id<<std::endl;
+    os<<"load "<<_id<<" "<<kResultReg<<std::endl;
 }
 void ArgRefVal::Dump_Tigger_Write(std::ostream &os ) const{
-    os<<"a"<<_id<<" = "<<kResultReg<<std::endl;
+    os<<"store "<<kResultReg<<" "<<_id<<std::endl;
 }
 void ArrayRefVal::Dump_Tigger(std::ostream &os ) const{
     assert(false && "Should not call Dump_Tigger of ArrayRefVal Directly!");
@@ -457,3 +454,4 @@ void IntVal::Dump_Tigger_Write(std::ostream &os ) const{
 //irgen not implemented yet.
 
 //Not sure is there any bugs in VarSlot Dump_Tigger_Write
+//Not sure what is going on with the rest two?
