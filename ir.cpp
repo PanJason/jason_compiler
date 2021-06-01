@@ -547,7 +547,7 @@ void BinaryInst::Dump_RISC_V(std::ostream &os, const FunctionDef &func ) const{
     os << "mv " << kResult2Reg << ", " << kResultReg << std::endl;
     _rhs->Dump_RISC_V_Read(os);
     if (_op == yy::parser::token::TOK_LTE || yy::parser::token::TOK_GTE) {
-        os << (_op == yy::parser::token::TOK_LTE ? "sgt" : "slt")<< kResultReg << ", " << kResult2Reg << ", " << kResultReg<< std::endl;
+        os << (_op == yy::parser::token::TOK_LTE ? "sgt " : "slt ")<< kResultReg << ", " << kResult2Reg << ", " << kResultReg<< std::endl;
         os << "seqz " << kResultReg << ", " << kResultReg << std::endl;
     }
     else if (_op == yy::parser::token::TOK_EQ || _op == yy::parser::token::TOK_NEQ) {
