@@ -62,7 +62,7 @@ void PushDeclInst(Args &&...args){
 }
 
 ValPtr AddSlot();
-ValPtr AddVarSlot();
+ValPtr AddVarSlot(bool is_addr);
 void Dump_Eeyore(std::ostream& os) const;
 void Dump_Eeyore_GLOB(std::ostream& os) const;
 void Dump_Tigger(std::ostream& os, std::stringstream& global_inst) const;
@@ -214,7 +214,7 @@ private:
 
 class VarSlotVal: public ValueBase{
 public:
-    VarSlotVal(std::size_t offset,bool is_global) : _id(_next_id++), _offset(offset), _is_global(is_global) {}
+    VarSlotVal(std::size_t offset,bool is_global, bool is_addr) : _id(_next_id++), _offset(offset), _is_global(is_global), _is_addr(is_addr) {}
     void Dump_Eeyore(std::ostream &os) const override;
     void Dump_Tigger(std::ostream &os) const override;
     void Dump_Tigger_Read(std::ostream &os) const override;
@@ -223,6 +223,7 @@ public:
 private:
     static std::size_t _next_id;
     bool _is_global = 0;
+    bool _is_addr = 0;
     std::size_t _offset;
     std::size_t _id;
 };

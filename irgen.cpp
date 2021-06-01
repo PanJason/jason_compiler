@@ -866,7 +866,7 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         //Evaluate expr or {expr, expr, {expr, expr},{expr}}
         //To-do
         //Create slot
-        auto slot = _now_func->AddVarSlot();
+        auto slot = _now_func->AddVarSlot(1);
         //Add slot to _vars
         if (!_vars->AddItem(ast.id(), slot)) {
             return LogError("Array has already been defined");
@@ -918,7 +918,7 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         auto expr = ast.const_init_val()->Eval(*this);
         if (!expr) return LogError("Can not evaluate the Init Value of a const Variable");
         //Create slot
-        auto slot = _now_func->AddVarSlot();
+        auto slot = _now_func->AddVarSlot(0);
         if (_now_func->func_name() != "00_GLOBAL") _now_func->add_cur_offset(4);
         //Add slot to _vars
         if (!_vars->AddItem(ast.id(), slot)) {
@@ -1059,7 +1059,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             //Evaluate expr or {expr, expr, {expr, expr},{expr}}
             //To-do
             //Create slot
-            auto slot = _now_func->AddVarSlot();
+            auto slot = _now_func->AddVarSlot(1);
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("Array has already been defined");
@@ -1095,7 +1095,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             #ifdef __DEBUG_IRGEN__
                 std::cout<<"Entering the most complex VarDefAST "<<ast.id()<<std::endl;
             #endif
-            auto slot = _now_func->AddVarSlot();
+            auto slot = _now_func->AddVarSlot(1);
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("Array has already been defined");
@@ -1190,7 +1190,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
         //1. Generate on Variables
         if (ast.init_val() == nullptr){
             //Create slot
-            auto slot = _now_func->AddVarSlot();
+            auto slot = _now_func->AddVarSlot(0);
             if (_now_func->func_name() != "00_GLOBAL") _now_func->add_cur_offset(4);
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
@@ -1207,7 +1207,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             auto expr = _now_func->func_name() == "00_GLOBAL" ? (std::make_shared<IntVal>(*(ast.init_val()->Eval(*this)))):(ast.init_val()->GenerateIR(*this));
             if (!expr) return LogError("Can not Geneate the Init Value of a Variable");
             //Create slot
-            auto slot = _now_func->AddVarSlot();
+            auto slot = _now_func->AddVarSlot(0);
             if (_now_func->func_name() != "00_GLOBAL") _now_func->add_cur_offset(4);
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {

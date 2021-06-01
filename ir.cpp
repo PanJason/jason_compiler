@@ -17,10 +17,10 @@ std::size_t LabelVal::_next_id = 0;
 std::size_t VarSlotVal::_next_id = 0;
 
 ValPtr FunctionDef::AddSlot() {return std::make_shared<SlotVal>(_slot_num++, _cur_offset);}
-ValPtr FunctionDef::AddVarSlot() {return std::make_shared<VarSlotVal>(_cur_offset, _func_name == "00_GLOBAL");}
+ValPtr FunctionDef::AddVarSlot(bool is_addr) {return std::make_shared<VarSlotVal>(_cur_offset, _func_name == "00_GLOBAL", is_addr);}
 
 void FunctionDef::Dump_Tigger(std::ostream &os, std::stringstream& global_inst) const{
-    os<<"f_"<<_func_name<<" ["<<_num_args<<"] ["<<_cur_offset + 4*_num_args <<"]"<<std::endl;
+    os<<"f_"<<_func_name<<" ["<<_num_args<<"] ["<<(_cur_offset + 4*8)/4 <<"]"<<std::endl;
     if(_func_name == "main"){
         os<<global_inst.str();
     }
@@ -229,19 +229,19 @@ void BinaryInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const{
 
 void BranchInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const{
     _cond->Dump_Tigger_Read(os);
-    os <<"if ";
+    os <<"if "<<kResultReg;
     if(_bnez){
         os<<" != x0 goto ";
     }
     else{
         os<<" == x0 goto ";
     }
-    _label->Dump_Tigger_Read(os);
+    _label->Dump_Tigger(os);
     os<<std::endl;
 }
 void FuncCallInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const{
     for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "store a"<<i<<" "<<(_func->cur_offset() + i * 4)/4<<std::endl;
+        os << "store a"<<i<<" "<<(func.cur_offset() + i * 4)/4<<std::endl;
     }
     std::size_t j = 0;
     for(const auto &i: _args){
@@ -251,7 +251,7 @@ void FuncCallInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const
     os<<"call f_"<<_func->func_name()<<std::endl;
     os<<kResultReg<<" = a0"<<std::endl;
     for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "load "<<(_func->cur_offset() + i * 4)/4<<" a"<<i<<std::endl;
+        os << "load "<<(func.cur_offset() + i * 4)/4<<" a"<<i<<std::endl;
     }
     _dest->Dump_Tigger_Write(os);
 }
@@ -265,7 +265,7 @@ void ReturnInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const{
 //2*FuncDef Bugs in load store loadaddr
 void VoidFuncCallInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) const{
     for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "store a"<<i<<" "<<(_func->cur_offset() + i * 4)/4<<std::endl;
+        os << "store a"<<i<<" "<<(func.cur_offset() + i * 4)/4<<std::endl;
     }
     std::size_t j = 0;
     for(const auto &i: _args){
@@ -274,7 +274,7 @@ void VoidFuncCallInst::Dump_Tigger(std::ostream &os, const FunctionDef &func ) c
     }
     os<<"call f_"<<_func->func_name()<<std::endl;
     for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "load "<<(_func->cur_offset() + i * 4)/4<<" a"<<i<<std::endl;
+        os << "load "<<(func.cur_offset() + i * 4)/4<<" a"<<i<<std::endl;
     }
 }
 
@@ -310,10 +310,20 @@ void VarSlotVal::Dump_Tigger_offset(std::ostream &os ) const{
 }
 void VarSlotVal::Dump_Tigger_Read(std::ostream &os ) const{
     if (_is_global == 1){
-        os<<"load v"<<_id<<" "<<kResultReg<<std::endl;
+        if (_is_addr){
+            os<<"loadaddr v"<<_id<<" "<<kResultReg<<std::endl;
+        }
+        else{
+            os<<"load v"<<_id<<" "<<kResultReg<<std::endl;
+        }
     }
     else{
-        os<<"load "<<_offset/4<<" "<<kResultReg<<std::endl;
+        if (_is_addr){
+            os<<"loadaddr "<<_offset/4<<" "<<kResultReg<<std::endl;
+        }
+        else{
+            os<<"load "<<_offset/4<<" "<<kResultReg<<std::endl;
+        }
     }
 }
 void VarSlotVal::Dump_Tigger_Write(std::ostream &os ) const{
@@ -445,3 +455,5 @@ void IntVal::Dump_Tigger_Write(std::ostream &os ) const{
 //Bugs in MakeVarSlot if a global variable do not need to add
 //2 FuncDefs not implemented yet.
 //irgen not implemented yet.
+
+//Not sure is there any bugs in VarSlot Dump_Tigger_Write
