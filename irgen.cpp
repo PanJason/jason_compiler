@@ -1294,7 +1294,16 @@ void IRGen::Dump_Tigger(std::ostream &os) {
         }
     }
 }
-
+void IRGen::Dump_RISC_V(std::ostream &os) {
+    auto glob = _funcs.find("00_GLOBAL");
+    glob->second->Dump_RISC_V_GLOB(os, global_assign_RISC_V);
+    for (const auto &it : _funcs) {
+        if (it.first != "00_GLOBAL")
+        {
+            it.second->Dump_RISC_V(os, global_assign_RISC_V);
+        }
+    }
+}
 //Todo: 2 Bugs left
 //Todo: 2. In evaluating ArrayAST, the function table entry should be looked up first.
 //Todo: 2. Change the sequence of searching

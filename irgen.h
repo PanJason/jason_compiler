@@ -42,6 +42,7 @@ class IRGen{
     //dump eeyore representations
     void Dump_Eeyore(std::ostream &os) const;
     void Dump_Tigger(std::ostream &os);
+    void Dump_RISC_V(std::ostream &os);
 
     //vistor methods here
     ValPtr GenerateOn(const CompUnitAST& ast);
@@ -112,5 +113,6 @@ private:
     //This map is used to store the values of const variables and arrays.
     xstl::NestedMapPtr<std::string, ConVarPTR > _const_vars;
     std::stringstream global_assign_Tigger;
+    std::stringstream global_assign_RISC_V;
 };
 #endif

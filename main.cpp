@@ -59,7 +59,7 @@ int main (int argc, const char *argv[])
         }
         case 2: {
           std::ofstream ofs(argv[i+1]);
-          //drv.Dump_RISC_V(ofs);
+          drv.Dump_RISC_V(ofs);
           i+=2;
           break;
         }

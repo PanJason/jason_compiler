@@ -55,3 +55,7 @@ int driver::Dump_Tigger(std::ostream &os){
   irgen.Dump_Tigger(os);
   return 0;
 }
+int driver::Dump_RISC_V(std::ostream &os){
+  irgen.Dump_RISC_V(os);
+  return 0;
+}

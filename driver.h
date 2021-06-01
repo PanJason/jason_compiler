@@ -35,6 +35,7 @@ public:
   int compile (const std::string& f);
   int Dump_Eeyore(std::ostream &os);
   int Dump_Tigger(std::ostream &os);
+  int Dump_RISC_V(std::ostream &os);
   std::string file;
   bool trace_parsing;
   void scan_begin ();

@@ -21,7 +21,7 @@ public:
     //dump intermediate representation of Eeyore
     virtual void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const = 0;
     virtual void Dump_Tigger(std::ostream &os, const FunctionDef &func) const = 0;
-
+    virtual void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const = 0;
 };
 using InstPtr = std::shared_ptr<InstBase>;
 using InstPtrList = std::vector<InstPtr>;
@@ -37,9 +37,16 @@ public:
     virtual void Dump_Tigger_offset(std::ostream &os) const {
         throw std::runtime_error("Not implemented. Should not be called!");
     };
+    virtual void Dump_RISC_V(std::ostream &os ) const = 0;
+    virtual void Dump_RISC_V_Read(std::ostream &os) const = 0;
+    virtual void Dump_RISC_V_Write(std::ostream &os) const = 0;
+    virtual void Dump_RISC_V_offset(std::ostream &os) const {
+        throw std::runtime_error("Not implemented. Should not be called!");
+    };
     int is_array = -1;
     int is_arg_ref = -1;
     int is_int = -1;
+    bool _is_global = 0;
 };
 using ValPtr = std::shared_ptr<ValueBase>;
 using ValPtrList = std::vector<ValPtr>;
@@ -67,6 +74,8 @@ void Dump_Eeyore(std::ostream& os) const;
 void Dump_Eeyore_GLOB(std::ostream& os) const;
 void Dump_Tigger(std::ostream& os, std::stringstream& global_inst) const;
 void Dump_Tigger_GLOB(std::ostream& os, std::stringstream& global_inst) const;
+void Dump_RISC_V(std::ostream& os, std::stringstream& global_inst) const;
+void Dump_RISC_V_GLOB(std::ostream& os, std::stringstream& global_inst) const;
 const std::string &func_name() const {return _func_name;}
 std::size_t num_args() const {return _num_args;}
 std::size_t slot_num() const {return _slot_num;}
@@ -90,6 +99,7 @@ public:
     DeclareVarInst(ValPtr val): _val(std::move(val)) {}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     ValPtr _val;
 };
@@ -99,6 +109,7 @@ public:
     DeclareArrInst(ValPtr val, std::size_t symbol_size): _val(std::move(val)), _symbol_size(symbol_size) {}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     ValPtr _val;
     std::size_t _symbol_size;
@@ -110,6 +121,7 @@ public:
     : _dest(std::move(dest)), _val(std::move(val)) {}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     ValPtr _dest, _val;
 };
@@ -120,6 +132,7 @@ public:
     : _bnez(bnez), _cond(std::move(cond)), _label(std::move(label)) {}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     //bnez (true) or beqz (false)
     bool _bnez;
@@ -131,6 +144,7 @@ public:
     JumpInst(ValPtr label) : _label(std::move(label)) {}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     ValPtr _label;
 };
@@ -139,6 +153,7 @@ public:
     LabelInst(ValPtr label) : _label(std::move(label)) {}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     ValPtr _label;
 };
@@ -149,6 +164,7 @@ public:
     : _dest(std::move(dest)), _func(std::move(func)), _args(std::move(args)){}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     ValPtr _dest;
     FuncDefPtr _func;
@@ -162,6 +178,7 @@ public:
     :_func(std::move(func)), _args(std::move(args)){}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     FuncDefPtr _func;
     ValPtrList _args;
@@ -173,6 +190,7 @@ public:
     ReturnInst(ValPtr val) : _val(std::move(val)) {}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     ValPtr _val;
 };
@@ -183,6 +201,7 @@ public:
     :_op(op), _dest(std::move(dest)), _lhs(std::move(lhs)), _rhs(std::move(rhs)) {}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     TokenType _op;
     ValPtr _dest, _lhs, _rhs;
@@ -194,6 +213,7 @@ public:
     : _op(op), _dest(std::move(dest)), _opr(std::move(opr)) {}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
+    void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
 private:
     TokenType _op;
     ValPtr _dest, _opr;
@@ -207,6 +227,10 @@ public:
     void Dump_Tigger_Read(std::ostream &os) const override;
     void Dump_Tigger_Write(std::ostream &os) const override;
     void Dump_Tigger_offset(std::ostream &os) const override;
+    void Dump_RISC_V(std::ostream &os) const override;
+    void Dump_RISC_V_Read(std::ostream &os) const override;
+    void Dump_RISC_V_Write(std::ostream &os) const override;
+    void Dump_RISC_V_offset(std::ostream &os) const override;
 private:
     std::size_t _offset; 
     std::size_t _id;
@@ -214,15 +238,18 @@ private:
 
 class VarSlotVal: public ValueBase{
 public:
-    VarSlotVal(std::size_t offset,bool is_global, bool is_addr) : _id(_next_id++), _offset(offset), _is_global(is_global), _is_addr(is_addr) {}
+    VarSlotVal(std::size_t offset,bool is_global, bool is_addr) : _id(_next_id++), _offset(offset), _is_addr(is_addr) {_is_global = is_global;}
     void Dump_Eeyore(std::ostream &os) const override;
     void Dump_Tigger(std::ostream &os) const override;
     void Dump_Tigger_Read(std::ostream &os) const override;
     void Dump_Tigger_Write(std::ostream &os) const override;
     void Dump_Tigger_offset(std::ostream &os) const override;
+    void Dump_RISC_V(std::ostream &os) const override;
+    void Dump_RISC_V_Read(std::ostream &os) const override;
+    void Dump_RISC_V_Write(std::ostream &os) const override;
+    void Dump_RISC_V_offset(std::ostream &os) const override;
 private:
     static std::size_t _next_id;
-    bool _is_global = 0;
     bool _is_addr = 0;
     std::size_t _offset;
     std::size_t _id;
@@ -235,6 +262,9 @@ public:
     void Dump_Tigger(std::ostream &os) const override;
     void Dump_Tigger_Read(std::ostream &os) const override;
     void Dump_Tigger_Write(std::ostream &os) const override;
+    void Dump_RISC_V(std::ostream &os) const override;
+    void Dump_RISC_V_Read(std::ostream &os) const override;
+    void Dump_RISC_V_Write(std::ostream &os) const override;
 private:
     std::size_t _id;
 };
@@ -247,6 +277,9 @@ public:
     void Dump_Tigger(std::ostream &os) const override;
     void Dump_Tigger_Read(std::ostream &os) const override;
     void Dump_Tigger_Write(std::ostream &os) const override;
+    void Dump_RISC_V(std::ostream &os) const override;
+    void Dump_RISC_V_Read(std::ostream &os) const override;
+    void Dump_RISC_V_Write(std::ostream &os) const override;
 private:
     ValPtr _base;
     ValPtr _offset;
@@ -259,6 +292,9 @@ public:
     void Dump_Tigger(std::ostream &os) const override;
     void Dump_Tigger_Read(std::ostream &os) const override;
     void Dump_Tigger_Write(std::ostream &os) const override;
+    void Dump_RISC_V(std::ostream &os) const override;
+    void Dump_RISC_V_Read(std::ostream &os) const override;
+    void Dump_RISC_V_Write(std::ostream &os) const override;
 private:
     static std::size_t _next_id;
     std::size_t _id;
@@ -271,6 +307,9 @@ public:
     void Dump_Tigger(std::ostream &os) const override;
     void Dump_Tigger_Read(std::ostream &os) const override;
     void Dump_Tigger_Write(std::ostream &os) const override;
+    void Dump_RISC_V(std::ostream &os) const override;
+    void Dump_RISC_V_Read(std::ostream &os) const override;
+    void Dump_RISC_V_Write(std::ostream &os) const override;
 private:
     int _val;
 };
