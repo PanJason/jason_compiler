@@ -19,29 +19,18 @@ std::size_t VarSlotVal::_next_id = 0;
 ValPtr FunctionDef::AddSlot() {return std::make_shared<SlotVal>(_slot_num++, _cur_offset);}
 ValPtr FunctionDef::AddVarSlot() {return std::make_shared<VarSlotVal>(_cur_offset, _func_name == "00_GLOBAL");}
 
-std::string FunctionDef::Dump_Tigger(std::ostream &os, bool dump2str) const{
-    std::stringstream s;
-    if (dump2str == 1){
-        s<<"f_"<<_func_name<<" ["<<_num_args<<"] ["<<_cur_offset + 4*27 <<"]"<<std::endl;
-        for (std::size_t i=0; i< 11; i++){
-            s << "store s"<<i<<" "<<_cur_offset + i * 4<<std::endl;
-        }
-        s<<"end f_"<<_func_name<<std::endl;
+void FunctionDef::Dump_Tigger(std::ostream &os, std::stringstream& global_inst) const{
+    os<<"f_"<<_func_name<<" ["<<_num_args<<"] ["<<_cur_offset + 4*_num_args <<"]"<<std::endl;
+    if(_func_name == "main"){
+        os<<global_inst.str();
     }
-    else{
-        os<<"f_"<<_func_name<<" ["<<_num_args<<"] ["<<_cur_offset + 4*27 <<"]"<<std::endl;
-        for (std::size_t i=0; i< 11; i++){
-            os << "store s"<<i<<" "<<_cur_offset + i * 4<<std::endl;
-        }
-        os<<"end f_"<<_func_name<<std::endl;
-    }
-    return s.str();
+    for (const auto &inst: _insts) inst->Dump_Tigger(os, *this);
+    os<<"end f_"<<_func_name<<std::endl;
 }
 
-std::string FunctionDef::Dump_Tigger_GLOB(std::ostream &os, bool dump2str) const{
+void FunctionDef::Dump_Tigger_GLOB(std::ostream &os, std::stringstream& global_inst) const{
     for (const auto &decl : _decl_insts) decl->Dump_Tigger(os, *this);
-    std::stringstream s;
-    return s.str();
+    for (const auto &inst: _insts) inst->Dump_Tigger(global_inst, *this);
 }
 
 

@@ -887,7 +887,7 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
             ste->_shape.push_back(*i);
         }
         //Insert Array Declaration Instruction
-        _now_func->add_cur_offset(ste->symbol_type());
+        if (_now_func->func_name() != "00_GLOBAL") _now_func->add_cur_offset(ste->symbol_size());
         _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
         _symbol_table->AddItem(ast.id(), ste);
         //Store the value
@@ -919,7 +919,7 @@ ValPtr IRGen::GenerateOn(const ConstDefAST& ast){
         if (!expr) return LogError("Can not evaluate the Init Value of a const Variable");
         //Create slot
         auto slot = _now_func->AddVarSlot();
-        _now_func->add_cur_offset(4);
+        if (_now_func->func_name() != "00_GLOBAL") _now_func->add_cur_offset(4);
         //Add slot to _vars
         if (!_vars->AddItem(ast.id(), slot)) {
             return LogError("symbol has already been defined");
@@ -1082,7 +1082,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
                 ste->_shape.push_back(*i);
             }
             //Insert Array Declaration Instruction
-            _now_func->add_cur_offset(ste->symbol_size());
+            if (_now_func->func_name() != "00_GLOBAL") _now_func->add_cur_offset(ste->symbol_size());
             _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
             _symbol_table->AddItem(ast.id(), ste);
             return nullptr;
@@ -1125,7 +1125,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
                 std::cout<<"Finishing creating entry in the most complex VarDefAST"<<std::endl;
             #endif
             //Insert Array Declaration Instruction
-            _now_func->add_cur_offset(ste->symbol_size());
+            if (_now_func->func_name() != "00_GLOBAL") _now_func->add_cur_offset(ste->symbol_size());
             _now_func->PushDeclInst<DeclareArrInst>(slot, ste->symbol_size());
             _symbol_table->AddItem(ast.id(), ste);
             #ifdef __DEBUG_IRGEN__
@@ -1191,7 +1191,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
         if (ast.init_val() == nullptr){
             //Create slot
             auto slot = _now_func->AddVarSlot();
-            _now_func->add_cur_offset(4);
+            if (_now_func->func_name() != "00_GLOBAL") _now_func->add_cur_offset(4);
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("symbol has already been defined");
@@ -1208,7 +1208,7 @@ ValPtr IRGen::GenerateOn(const VarDefAST& ast){
             if (!expr) return LogError("Can not Geneate the Init Value of a Variable");
             //Create slot
             auto slot = _now_func->AddVarSlot();
-            _now_func->add_cur_offset(4);
+            if (_now_func->func_name() != "00_GLOBAL") _now_func->add_cur_offset(4);
             //Add slot to _vars
             if (!_vars->AddItem(ast.id(), slot)) {
                 return LogError("symbol has already been defined");
@@ -1280,6 +1280,17 @@ void IRGen::Dump_Eeyore(std::ostream &os) const {
         if (it.first != "00_GLOBAL")
         {
             it.second->Dump_Eeyore(os);
+        }
+    }
+}
+
+void IRGen::Dump_Tigger(std::ostream &os) {
+    auto glob = _funcs.find("00_GLOBAL");
+    glob->second->Dump_Tigger_GLOB(os, global_assign_Tigger);
+    for (const auto &it : _funcs) {
+        if (it.first != "00_GLOBAL")
+        {
+            it.second->Dump_Tigger(os, global_assign_Tigger);
         }
     }
 }

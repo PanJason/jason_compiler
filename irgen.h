@@ -41,7 +41,7 @@ class IRGen{
 
     //dump eeyore representations
     void Dump_Eeyore(std::ostream &os) const;
-    void Dump_Tigger(std::ostream &os) const;
+    void Dump_Tigger(std::ostream &os);
 
     //vistor methods here
     ValPtr GenerateOn(const CompUnitAST& ast);

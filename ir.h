@@ -65,8 +65,8 @@ ValPtr AddSlot();
 ValPtr AddVarSlot();
 void Dump_Eeyore(std::ostream& os) const;
 void Dump_Eeyore_GLOB(std::ostream& os) const;
-std::string Dump_Tigger(std::ostream& os, bool dump2str) const;
-std::string Dump_Tigger_GLOB(std::ostream& os, bool dump2str) const;
+void Dump_Tigger(std::ostream& os, std::stringstream& global_inst) const;
+void Dump_Tigger_GLOB(std::ostream& os, std::stringstream& global_inst) const;
 const std::string &func_name() const {return _func_name;}
 std::size_t num_args() const {return _num_args;}
 std::size_t slot_num() const {return _slot_num;}
