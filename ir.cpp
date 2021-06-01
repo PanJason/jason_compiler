@@ -702,7 +702,7 @@ void VarSlotVal::Dump_RISC_V_Write(std::ostream &os ) const{
     if (_is_global == 1){
         os<<"la "<<kArrReg<<", v"<<_id<<std::endl;
         //reg1[int12] = reg2 sw reg2, int12(reg1)
-        os<<"sw "<<kResultReg<<", 0("<<kArrReg<<")";
+        os<<"sw "<<kResultReg<<", 0("<<kArrReg<<")"<<std::endl;
     }
     else{
         os<<"sw "<<kResultReg<<", "<<_offset + 32<<"(sp)"<<std::endl;
