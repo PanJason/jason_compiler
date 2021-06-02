@@ -477,8 +477,18 @@ func:
     os<<"  .global "<<_func_name<<std::endl;
     os<<"  .type   "<<_func_name<<", @function"<<std::endl;
     os<<_func_name<<":"<<std::endl;
-    os<<"  addi    sp, sp, -"<<stk<<std::endl;
-    os<<"  sw      ra, "<<stk-4<<"(sp)"<<std::endl;
+    if (stk < 2048){
+        os<<"addi sp, sp, -"<<stk<<std::endl;
+        os<<"sw ra, "<<stk-4<<"(sp)"<<std::endl;
+    }
+    else{
+        os<<"li "<<kResult3Reg<<", "<<-stk<<std::endl;
+        os<<"add sp, sp, "<<kResult3Reg<<std::endl;
+        os<<"li "<<kResult3Reg<<", "<<stk-4<<std::endl;
+        os<<"add "<<kResult3Reg<<", sp, "<<kResult3Reg<<std::endl;
+        os<<"sw ra, 0("<<kResult3Reg<<")"<<std::endl;
+    }
+    
     if(_func_name == "main"){
         os<<global_inst.str();
     }
@@ -499,13 +509,13 @@ void DeclareVarInst::Dump_RISC_V(std::ostream &os, const FunctionDef &func) cons
         assert(false && "DeclareVarInst won't generate anything out global area!");
     }
 
-    os<<" .global   "; _val->Dump_RISC_V(os); os <<std::endl;
+    os<<"  .global   "; _val->Dump_RISC_V(os); os <<std::endl;
     os<<"  .section  .sdata"<<std::endl;
     os<<"  .align    2"<<std::endl;
     os<<"  .type     "; _val->Dump_RISC_V(os); os<<", @object"<<std::endl;
     os<<"  .size     "; _val->Dump_RISC_V(os); os<<", 4"<<std::endl;
     _val->Dump_RISC_V(os); os<<":"<<std::endl;
-    os<<"  .word     0";
+    os<<"  .word     0"<<std::endl;
 }
 
 void DeclareArrInst::Dump_RISC_V(std::ostream &os, const FunctionDef &func) const{
@@ -535,8 +545,8 @@ void UnaryInst::Dump_RISC_V(std::ostream &os, const FunctionDef &func ) const{
     _opr->Dump_RISC_V_Read(os);
     switch (_op) {
     case yy::parser::token::TOK_PLUS: {break;}
-    case yy::parser::token::TOK_MINUS: {os<<"neg"<<kResultReg<<", "<<kResultReg<<std::endl; break;}
-    case yy::parser::token::TOK_NOT: {os<<"seqz"<<kResultReg<<", "<<kResultReg<<std::endl; break;}
+    case yy::parser::token::TOK_MINUS: {os<<"neg "<<kResultReg<<", "<<kResultReg<<std::endl; break;}
+    case yy::parser::token::TOK_NOT: {os<<"seqz "<<kResultReg<<", "<<kResultReg<<std::endl; break;}
     default: assert(false && "unknown binary operator");
     }
     _dest->Dump_RISC_V_Write(os);
@@ -546,7 +556,7 @@ void BinaryInst::Dump_RISC_V(std::ostream &os, const FunctionDef &func ) const{
     _lhs->Dump_RISC_V_Read(os);
     os << "mv " << kResult2Reg << ", " << kResultReg << std::endl;
     _rhs->Dump_RISC_V_Read(os);
-    if (_op == yy::parser::token::TOK_LTE || yy::parser::token::TOK_GTE) {
+    if (_op == yy::parser::token::TOK_LTE || _op ==yy::parser::token::TOK_GTE) {
         os << (_op == yy::parser::token::TOK_LTE ? "sgt " : "slt ")<< kResultReg << ", " << kResult2Reg << ", " << kResultReg<< std::endl;
         os << "seqz " << kResultReg << ", " << kResultReg << std::endl;
     }
@@ -603,7 +613,7 @@ void FuncCallInst::Dump_RISC_V(std::ostream &os, const FunctionDef &func ) const
     os<<"call "<<_func->func_name()<<std::endl;
     os<<"mv "<<kResultReg<<", a0"<<std::endl;
     for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "iw a"<<i<<", "<<i*4<<"(sp)"<<std::endl;
+        os << "lw a"<<i<<", "<<i*4<<"(sp)"<<std::endl;
     }
     _dest->Dump_RISC_V_Write(os);
 }
@@ -613,8 +623,17 @@ void ReturnInst::Dump_RISC_V(std::ostream &os, const FunctionDef &func ) const{
         os<< "mv a0, "<<kResultReg<<std::endl;
 
     std::size_t stk = ((func.cur_offset()/4 + 8)/4 + 1) * 16;
-    os<<"lw ra, "<<stk - 4<<"(sp)"<<std::endl;
-    os<<"addi sp, sp, "<<stk<<std::endl;
+    if (stk < 2048){
+        os<<"lw ra, "<<stk - 4<<"(sp)"<<std::endl;
+        os<<"addi sp, sp, "<<stk<<std::endl;
+    }
+    else{
+        os<<"li "<<kResult3Reg<<", "<<stk-4<<std::endl;
+        os<<"add "<<kResult3Reg<<", sp, "<<kResult3Reg<<std::endl;
+        os<<"lw ra, 0("<<kResult3Reg<<")"<<std::endl;
+        os<<"li "<<kResult3Reg<<", "<<stk<<std::endl;
+        os<<"add sp, sp, "<<kResult3Reg<<std::endl;
+    }
     os<<"ret"<<std::endl;
 }
 
@@ -639,7 +658,7 @@ void VoidFuncCallInst::Dump_RISC_V(std::ostream &os, const FunctionDef &func ) c
     }
     //lw reg, int10*4(sp)
     for (std::size_t i = 0; i < _args.size(); ++i) {
-        os << "iw a"<<i<<", "<<i*4<<"(sp)"<<std::endl;
+        os << "lw a"<<i<<", "<<i*4<<"(sp)"<<std::endl;
     }
 }
 
@@ -651,10 +670,25 @@ void SlotVal::Dump_RISC_V(std::ostream &os ) const{
 void SlotVal::Dump_RISC_V_Read(std::ostream &os ) const{
     //load int10 reg
     //lw reg, int10*4(sp)
-    os<<"lw "<<kResultReg<<", "<<_offset + 32<<"(sp)"<<std::endl;
+    if (_offset + 32 < 2048){
+        os<<"lw "<<kResultReg<<", "<<_offset + 32<<"(sp)"<<std::endl;
+    }
+    else{
+        os<<"li "<<kResult3Reg<<", "<<_offset + 32<<std::endl;
+        os<<"add "<<kResult3Reg<<", sp, "<<kResult3Reg<<std::endl;
+        os<<"lw "<<kResultReg<<", 0("<<kResult3Reg<<")"<<std::endl;
+    }
+    
 }
 void SlotVal::Dump_RISC_V_Write(std::ostream &os ) const{
-    os<<"sw "<<kResultReg<<", "<<_offset + 32<<"(sp)"<<std::endl;
+    if (_offset + 32 < 2048){
+        os<<"sw "<<kResultReg<<", "<<_offset + 32<<"(sp)"<<std::endl;
+    }
+    else{
+        os<<"li "<<kResult3Reg<<", "<<_offset + 32<<std::endl;
+        os<<"add "<<kResult3Reg<<", sp, "<<kResult3Reg<<std::endl;
+        os<<"sw "<<kResultReg<<", 0("<<kResult3Reg<<")"<<std::endl;
+    }
 }
 void SlotVal::Dump_RISC_V_offset(std::ostream &os ) const{
     os<<_offset + 32;
@@ -690,11 +724,26 @@ void VarSlotVal::Dump_RISC_V_Read(std::ostream &os ) const{
     else{
         if (_is_addr){
             //loadaddr int10 reg	addi reg, sp, int10*4
-            os<<"addi "<<kResultReg<<", sp, "<<_offset + 32<<std::endl;
+            //os <<"li "<<kResult3Reg<<_offset + 32<<std::endl;
+            if (_offset + 32 < 2048){
+                os<<"addi "<<kResultReg<<", sp, "<<_offset + 32<<std::endl;
+            }
+            else{
+                os<<"li "<<kResult3Reg<<", "<<_offset + 32<<std::endl;
+                os<<"add "<<kResultReg<<", sp, "<<kResult3Reg<<std::endl;
+            }
+            
         }
         else{
             //load int10 reg	lw reg, int10*4(sp)
-            os<<"lw "<<kResultReg<<", "<<_offset + 32<<"(sp)"<<std::endl;
+            if (_offset + 32 < 2048){
+                os<<"lw "<<kResultReg<<", "<<_offset + 32<<"(sp)"<<std::endl;
+            }
+            else{
+                os<<"li "<<kResult3Reg<<", "<<_offset + 32<<std::endl;
+                os<<"add "<<kResult3Reg<<", sp, "<<kResult3Reg<<std::endl;
+                os<<"lw "<<kResultReg<<", 0("<<kResult3Reg<<")"<<std::endl;
+            }
         }
     }
 }
@@ -705,7 +754,15 @@ void VarSlotVal::Dump_RISC_V_Write(std::ostream &os ) const{
         os<<"sw "<<kResultReg<<", 0("<<kArrReg<<")"<<std::endl;
     }
     else{
-        os<<"sw "<<kResultReg<<", "<<_offset + 32<<"(sp)"<<std::endl;
+        if (_offset + 32 < 2048){
+            os<<"sw "<<kResultReg<<", "<<_offset + 32<<"(sp)"<<std::endl;
+        }
+        else{
+            os<<"li "<<kResult3Reg<<", "<<_offset + 32<<std::endl;
+            os<<"add "<<kResult3Reg<<", sp, "<<kResult3Reg<<std::endl;
+            os<<"sw "<<kResultReg<<", 0("<<kResult3Reg<<")"<<std::endl;
+        }
+        
     }
 }
 void ArgRefVal::Dump_RISC_V(std::ostream &os ) const{
@@ -738,15 +795,27 @@ void ArrayRefVal::Dump_RISC_V_Read(std::ostream &os ) const{
                 os<<std::endl;
             }
             else{
-                os<<"addi "<<kArrReg<<", sp, ";
-                _base->Dump_RISC_V_offset(os);
-                os<<std::endl;
+                std::size_t base_offset = _base->get_RISC_V_offset();
+                if (base_offset < 2048){
+                    os<<"addi "<<kArrReg<<", sp, "<<base_offset<<std::endl;
+                }
+                else{
+                    os<<"li "<<kResult3Reg<<", "<<base_offset<<std::endl;
+                    os<<"add "<<kArrReg<<", sp, "<<kResult3Reg<<std::endl;
+                }
             }
         }
         //reg1 = reg2[int12]	lw reg1, int12(reg2)
-        os<<"lw "<<kResultReg<<", ";
-        _offset->Dump_RISC_V(os);
-        os<<"("<<kArrReg<<")"<<std::endl;
+        //Bugs here
+        std::size_t off_offset = _offset->get_RISC_V_offset();
+        if (off_offset < 2048){
+            os<<"lw "<<kResultReg<<", "<<off_offset<<"("<<kArrReg<<")"<<std::endl;
+        }
+        else{
+            os<<"li "<<kResult3Reg<<", "<<off_offset<<std::endl;
+            os<<"add "<<kResult3Reg<<", "<<kArrReg<<", "<<kResult3Reg<<std::endl;
+            os<<"lw "<<kResultReg<<", 0("<<kResult3Reg<<")"<<std::endl;
+        }
     }
     else{
         if (_base->is_arg_ref == 1){
@@ -761,9 +830,15 @@ void ArrayRefVal::Dump_RISC_V_Read(std::ostream &os ) const{
                 os<<std::endl;
             }
             else{
-                os<<"addi "<<kArrReg<<", sp, ";
-                _base->Dump_RISC_V_offset(os);
-                os<<std::endl;
+                //Bugs here
+                std::size_t base_offset = _base->get_RISC_V_offset();
+                if (base_offset < 2048){
+                    os<<"addi "<<kArrReg<<", sp, "<<base_offset<<std::endl;
+                }
+                else{
+                    os<<"li "<<kResult3Reg<<", "<<base_offset<<std::endl;
+                    os<<"add "<<kArrReg<<", sp, "<<kResult3Reg<<std::endl;
+                }
             }
         }
         if (_offset->is_arg_ref == 1){
@@ -784,9 +859,16 @@ void ArrayRefVal::Dump_RISC_V_Read(std::ostream &os ) const{
                 os<<")("<<kTempReg<<")"<<std::endl;
             }
             else{
-                os<<"lw "<<kTempReg<<", ";
-                _offset->Dump_RISC_V_offset(os);
-                os<<"(sp)"<<std::endl;
+                //Bugs here
+                std::size_t off_offset = _offset->get_RISC_V_offset();
+                if (off_offset < 2048){
+                    os<<"lw "<<kTempReg<<", "<<off_offset<<"(sp)"<<std::endl;
+                }
+                else{
+                    os<<"li "<<kResult3Reg<<", "<<off_offset<<std::endl;
+                    os<<"add "<<kResult3Reg<<", sp, "<<kResult3Reg<<std::endl;
+                    os<<"lw "<<kTempReg<<", 0("<<kResult3Reg<<")"<<std::endl;
+                }
             }
         }
         //reg1 = reg2 + reg3	add reg1, reg2, reg3
@@ -812,15 +894,26 @@ void ArrayRefVal::Dump_RISC_V_Write(std::ostream &os ) const{
                 os<<std::endl;
             }
             else{
-                os<<"addi "<<kArrReg<<", sp, ";
-                _base->Dump_RISC_V_offset(os);
-                os<<std::endl;
+                std::size_t base_offset = _base->get_RISC_V_offset();
+                if (base_offset < 2048){
+                    os<<"addi "<<kArrReg<<", sp, "<<base_offset<<std::endl;
+                }
+                else{
+                    os<<"li "<<kResult3Reg<<", "<<base_offset<<std::endl;
+                    os<<"add "<<kArrReg<<", sp, "<<kResult3Reg<<std::endl;
+                }
             }
         }
         //reg1[int12] = reg2	sw reg2, int12(reg1)
-        os<<"sw "<<kResultReg<<", ";
-        _offset->Dump_RISC_V(os);
-        os<<"("<<kArrReg<<")"<<std::endl;
+        std::size_t off_offset = _offset->get_RISC_V_offset();
+        if (off_offset < 2048){
+            os<<"sw "<<kResultReg<<", "<<off_offset<<"("<<kArrReg<<")"<<std::endl;
+        }
+        else{
+            os<<"li "<<kResult3Reg<<", "<<off_offset<<std::endl;
+            os<<"add "<<kResult3Reg<<", "<<kArrReg<<", "<<kResult3Reg<<std::endl;
+            os<<"sw "<<kResultReg<<", 0("<<kResult3Reg<<")"<<std::endl;
+        }
         
     }
     else{
@@ -836,9 +929,14 @@ void ArrayRefVal::Dump_RISC_V_Write(std::ostream &os ) const{
                 os<<std::endl;
             }
             else{
-                os<<"addi "<<kArrReg<<", sp, ";
-                _base->Dump_RISC_V_offset(os);
-                os<<std::endl;
+                std::size_t base_offset = _base->get_RISC_V_offset();
+                if (base_offset < 2048){
+                    os<<"addi "<<kArrReg<<", sp, "<<base_offset<<std::endl;
+                }
+                else{
+                    os<<"li "<<kResult3Reg<<", "<<base_offset<<std::endl;
+                    os<<"add "<<kArrReg<<", sp, "<<kResult3Reg<<std::endl;
+                }
             }
         }
         if (_offset->is_arg_ref == 1){
@@ -859,9 +957,15 @@ void ArrayRefVal::Dump_RISC_V_Write(std::ostream &os ) const{
                 os<<")("<<kTempReg<<")"<<std::endl;
             }
             else{
-                os<<"lw "<<kTempReg<<", ";
-                _offset->Dump_RISC_V_offset(os);
-                os<<"(sp)"<<std::endl;
+                std::size_t off_offset = _offset->get_RISC_V_offset();
+                if (off_offset < 2048){
+                    os<<"lw "<<kTempReg<<", "<<off_offset<<"(sp)"<<std::endl;
+                }
+                else{
+                    os<<"li "<<kResult3Reg<<", "<<off_offset<<std::endl;
+                    os<<"add "<<kResult3Reg<<", sp, "<<kResult3Reg<<std::endl;
+                    os<<"lw "<<kTempReg<<", 0("<<kResult3Reg<<")"<<std::endl;
+                }
             }
         }
         //reg1 = reg2 + reg3	add reg1, reg2, reg3

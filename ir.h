@@ -43,6 +43,9 @@ public:
     virtual void Dump_RISC_V_offset(std::ostream &os) const {
         throw std::runtime_error("Not implemented. Should not be called!");
     };
+    virtual std::size_t get_RISC_V_offset() const {
+        throw std::runtime_error("Not implemented. Should not be called!");
+    };
     int is_array = -1;
     int is_arg_ref = -1;
     int is_int = -1;
@@ -231,6 +234,7 @@ public:
     void Dump_RISC_V_Read(std::ostream &os) const override;
     void Dump_RISC_V_Write(std::ostream &os) const override;
     void Dump_RISC_V_offset(std::ostream &os) const override;
+    std::size_t get_RISC_V_offset() const {return (_offset + 32);} // 8 a registers
 private:
     std::size_t _offset; 
     std::size_t _id;
@@ -248,6 +252,7 @@ public:
     void Dump_RISC_V_Read(std::ostream &os) const override;
     void Dump_RISC_V_Write(std::ostream &os) const override;
     void Dump_RISC_V_offset(std::ostream &os) const override;
+    std::size_t get_RISC_V_offset() const {return (_offset + 32);} // 8 a registers
 private:
     static std::size_t _next_id;
     bool _is_addr = 0;
@@ -310,6 +315,7 @@ public:
     void Dump_RISC_V(std::ostream &os) const override;
     void Dump_RISC_V_Read(std::ostream &os) const override;
     void Dump_RISC_V_Write(std::ostream &os) const override;
+    std::size_t get_RISC_V_offset() const {return _val;}
 private:
     int _val;
 };
