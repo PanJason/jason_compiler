@@ -125,6 +125,7 @@ public:
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
+    const ValPtr val() const {return _val;}
 private:
     ValPtr _dest, _val;
 };

@@ -33,7 +33,12 @@ void FunctionDef::Dump_Tigger(std::ostream &os, std::stringstream& global_inst) 
 
 void FunctionDef::Dump_Tigger_GLOB(std::ostream &os, std::stringstream& global_inst) const{
     for (const auto &decl : _decl_insts) decl->Dump_Tigger(os, *this);
-    for (const auto &inst: _insts) inst->Dump_Tigger(global_inst, *this);
+    for (const auto &inst: _insts) {
+        auto assign_inst = std::dynamic_pointer_cast<AssignInst>(inst);
+        if((!assign_inst->val()->is_int == 1 )||( !assign_inst->val()->get_RISC_V_offset() == 0)){
+            inst->Dump_Tigger(global_inst, *this);
+        }
+    }
 }
 
 
