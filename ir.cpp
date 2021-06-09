@@ -19,6 +19,161 @@ std::size_t VarSlotVal::_next_id = 0;
 ValPtr FunctionDef::AddSlot() {return std::make_shared<SlotVal>(_slot_num++, _cur_offset);}
 ValPtr FunctionDef::AddVarSlot(bool is_addr) {return std::make_shared<VarSlotVal>(_cur_offset, _func_name == "00_GLOBAL", is_addr);}
 
+void FunctionDef::setBasicBlocks(){
+    std::size_t tmp_inst_num = _insts.size();
+    std::size_t next_basic_block_line = tmp_inst_num;
+    std::unordered_map<std::size_t, std::size_t> label_line_map;
+    std::unordered_map<std::size_t, std::size_t> line_line_map;
+    std::vector<std::size_t> block_start_lines;
+    //First reverse scan all the instructions and store the map between label and the next basic block.
+    //Labels are not included in the basic block
+    for(auto inst = _insts.rbegin() ; inst != _insts.rend(); inst++)
+    {
+        tmp_inst_num--;
+        if ((*inst)->_inst_type == 6){
+            auto tmp = std::dynamic_pointer_cast<LabelInst>(*inst);
+            auto tmp_label = std::dynamic_pointer_cast<LabelVal>(tmp->getLabel());
+            label_line_map.insert(std::pair<std::size_t, std::size_t>(tmp_label->getId(), next_basic_block_line));
+            line_line_map.insert(std::pair<std::size_t, std::size_t>(tmp_inst_num, next_basic_block_line));
+        }
+        else{
+            next_basic_block_line = tmp_inst_num;
+        }
+    }
+    assert(tmp_inst_num == 0);
+    tmp_inst_num =0;
+    bool initial = 1;
+    for(const auto &inst: _insts){
+        if(inst->_inst_type == 3 || inst->_inst_type ==5){
+            std::shared_ptr<LabelVal> tmp_label;
+            if(inst->_inst_type == 3){
+                auto tmp = std::dynamic_pointer_cast<BranchInst>(inst);
+                tmp_label = std::dynamic_pointer_cast<LabelVal>(tmp->getLabel());
+            }
+            if(inst->_inst_type == 5){
+                auto tmp = std::dynamic_pointer_cast<JumpInst>(inst);
+                tmp_label = std::dynamic_pointer_cast<LabelVal>(tmp->getLabel());
+            }
+            auto jump_block_line = label_line_map.find(tmp_label->getId())->second;
+            if (instNum_block_map.find(jump_block_line) == instNum_block_map.end()){
+                block_start_lines.push_back(jump_block_line);
+                instNum_block_map.insert(std::pair<std::size_t, BasicBlockPtr>(jump_block_line, std::make_shared<BasicBlock>()));
+            }
+
+
+            if (tmp_inst_num < _insts.size() - 1){
+                if(_insts.at(tmp_inst_num + 1)->_inst_type ==6){
+                    auto tmp_next_block_line = line_line_map.find(tmp_inst_num + 1)->second;
+                    if (instNum_block_map.find(tmp_next_block_line) == instNum_block_map.end()){
+                        block_start_lines.push_back(tmp_next_block_line);
+                        instNum_block_map.insert(std::pair<std::size_t, BasicBlockPtr>(tmp_next_block_line, std::make_shared<BasicBlock>()));
+                    }
+                }
+                else{
+                    if (instNum_block_map.find(tmp_inst_num + 1) == instNum_block_map.end()){
+                        block_start_lines.push_back(tmp_inst_num + 1);
+                        instNum_block_map.insert(std::pair<std::size_t, BasicBlockPtr>(tmp_inst_num + 1, std::make_shared<BasicBlock>()));
+                    }
+                }
+            }
+            
+        }
+        else{
+            if(inst->_inst_type !=6 && initial){
+                initial = 0;
+                if (instNum_block_map.find(tmp_inst_num) == instNum_block_map.end()){
+                    block_start_lines.push_back(tmp_inst_num);
+                    instNum_block_map.insert(std::pair<std::size_t, BasicBlockPtr>(tmp_inst_num, std::make_shared<BasicBlock>()));
+                }
+            }
+        }
+        tmp_inst_num ++;
+    }
+    for (auto iter= instNum_block_map.begin(); iter != instNum_block_map.end();){
+        auto tmp = (*iter).second;
+        tmp->start_inst = (*iter).first;
+
+        iter ++;
+        std::size_t outboundline = _insts.size();
+        if(iter != instNum_block_map.end()){
+            tmp->end_inst = (*iter).first - 1;
+            outboundline = (*iter).first;
+        }
+        else{
+            tmp->end_inst = _insts.size() - 1;
+        }
+        for(auto i = tmp->end_inst; i >= tmp->start_inst; i--){
+            if (_insts.at(i)->_inst_type == 3){
+                auto tmp_inst = std::dynamic_pointer_cast<BranchInst>(_insts.at(i));
+                auto tmp_label = std::dynamic_pointer_cast<LabelVal>(tmp_inst->getLabel());
+                auto jump_block_line = label_line_map.find(tmp_label->getId())->second;
+                auto target = instNum_block_map.find(jump_block_line)->second;
+                tmp->OutBlocks.push_back(target);
+                target->InBlocks.push_back(tmp);
+                if (outboundline < _insts.size()){
+                    tmp->OutBlocks.push_back((*iter).second);
+                    (*iter).second->InBlocks.push_back(tmp);
+                }
+                break;
+            }
+            if (_insts.at(i)->_inst_type == 5){
+                auto tmp_inst = std::dynamic_pointer_cast<JumpInst>(_insts.at(i));
+                auto tmp_label = std::dynamic_pointer_cast<LabelVal>(tmp_inst->getLabel());
+                auto jump_block_line = label_line_map.find(tmp_label->getId())->second;
+                auto target = instNum_block_map.find(jump_block_line)->second;
+                tmp->OutBlocks.push_back(target);
+                target->InBlocks.push_back(tmp);
+                break;
+            }
+        }
+    }
+}
+
+void FunctionDef::analyzeActiveVariables(){
+    for(auto iter = instNum_block_map.begin(); iter != instNum_block_map.end(); iter ++){
+        std::size_t start_inst = (*iter).second->start_inst;
+        std::size_t end_inst = (*iter).second->end_inst;
+        for (std::size_t i = start_inst; i<= end_inst ;i ++){
+            auto inst = _insts.at(i);
+            switch (inst->_inst_type)
+            {
+            case 2:
+                /* code */
+                break;
+            case 3:
+                /* code */
+                break;
+            case 4:
+                /* code */
+                break;
+            case 5:
+                /* code */
+                break;
+            case 6:
+                /* code */
+                break;
+            case 7:
+                /* code */
+                break;
+            case 8:
+                /* code */
+                break;
+            case 9:
+                /* code */
+                break;
+            case 10:
+                /* code */
+                break;
+            case 11:
+                /* code */
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
 void FunctionDef::Dump_Tigger(std::ostream &os, std::stringstream& global_inst) const{
     os<<"f_"<<_func_name<<" ["<<_num_args<<"] ["<<(_cur_offset + 4*8)/4 <<"]"<<std::endl;
     if(_func_name == "main"){
@@ -506,6 +661,8 @@ func:
 }
 
 void FunctionDef::Dump_RISC_V_GLOB(std::ostream &os, std::stringstream& global_inst) const{
+    //First Dump those Non-Zero Variables
+    //Record these dumped Global Variables
     for (const auto &decl : _decl_insts) decl->Dump_RISC_V(os, *this);
     for (const auto &inst: _insts) {
         auto assign_inst = std::dynamic_pointer_cast<AssignInst>(inst);

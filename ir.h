@@ -11,8 +11,30 @@
 #include <memory>
 #include <vector>
 #include <iostream>
+#include <map>
+#include <set>
 
 using TokenType = int;
+class BasicBlock;
+using BasicBlockPtr = std::shared_ptr<BasicBlock>;
+using BasicBlockPtrList = std::vector<BasicBlockPtr>;
+class EeyoreVariable{
+public:
+    std::size_t _type;
+    std::size_t _id;
+};
+class BasicBlock{
+public:
+    std::size_t start_inst;
+    std::size_t end_inst;
+    BasicBlockPtrList InBlocks;
+    BasicBlockPtrList OutBlocks;
+    std::set<EeyoreVariable> Use;
+    std::set<EeyoreVariable> Def;
+    std::set<EeyoreVariable> InActive;
+    std::set<EeyoreVariable> OutActive;
+};
+
 class FunctionDef;
 // Base class of all instructions
 class InstBase{
@@ -22,6 +44,7 @@ public:
     virtual void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const = 0;
     virtual void Dump_Tigger(std::ostream &os, const FunctionDef &func) const = 0;
     virtual void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const = 0;
+    std::size_t _inst_type = -1;
 };
 using InstPtr = std::shared_ptr<InstBase>;
 using InstPtrList = std::vector<InstPtr>;
@@ -87,7 +110,9 @@ void add_cur_offset(std::size_t add_offset) {_cur_offset += add_offset;}
 TokenType ret_type() const {return _ret_type;}
 const InstPtrList& decl_insts() const {return _decl_insts;}
 const InstPtrList& insts() const {return _insts;}
-
+void setBasicBlocks();
+void analyzeActiveVariables();
+std::map<std::size_t, BasicBlockPtr> instNum_block_map;
 private:
 std::string _func_name;
 std::size_t _num_args, _slot_num, _cur_offset;
@@ -99,7 +124,7 @@ using FuncDefPtr = std::shared_ptr<FunctionDef>;
 
 class DeclareVarInst : public InstBase {
 public:
-    DeclareVarInst(ValPtr val): _val(std::move(val)) {}
+    DeclareVarInst(ValPtr val): _val(std::move(val)) {_inst_type = 0;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
@@ -109,7 +134,7 @@ private:
 
 class DeclareArrInst : public InstBase {
 public:
-    DeclareArrInst(ValPtr val, std::size_t symbol_size): _val(std::move(val)), _symbol_size(symbol_size) {}
+    DeclareArrInst(ValPtr val, std::size_t symbol_size): _val(std::move(val)), _symbol_size(symbol_size) {_inst_type = 1;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
@@ -121,7 +146,7 @@ private:
 class AssignInst : public InstBase {
 public:
     AssignInst(ValPtr dest, ValPtr val)
-    : _dest(std::move(dest)), _val(std::move(val)) {}
+    : _dest(std::move(dest)), _val(std::move(val)) {_inst_type = 2;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
@@ -133,10 +158,11 @@ private:
 class BranchInst : public InstBase {
 public:
     BranchInst(bool bnez, ValPtr cond, ValPtr label)
-    : _bnez(bnez), _cond(std::move(cond)), _label(std::move(label)) {}
+    : _bnez(bnez), _cond(std::move(cond)), _label(std::move(label)) {_inst_type = 3;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
+    const ValPtr getLabel() const {return _label;}
 private:
     //bnez (true) or beqz (false)
     bool _bnez;
@@ -145,19 +171,21 @@ private:
 
 class JumpInst : public InstBase {
 public:
-    JumpInst(ValPtr label) : _label(std::move(label)) {}
+    JumpInst(ValPtr label) : _label(std::move(label)) {_inst_type = 5;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
+    const ValPtr getLabel() const {return _label;}
 private:
     ValPtr _label;
 };
 class LabelInst : public InstBase {
 public:
-    LabelInst(ValPtr label) : _label(std::move(label)) {}
+    LabelInst(ValPtr label) : _label(std::move(label)) {_inst_type = 6;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
+    const ValPtr getLabel() const {return _label;}
 private:
     ValPtr _label;
 };
@@ -165,7 +193,7 @@ private:
 class FuncCallInst : public InstBase {
 public:
     FuncCallInst(ValPtr dest, FuncDefPtr func, ValPtrList args)
-    : _dest(std::move(dest)), _func(std::move(func)), _args(std::move(args)){}
+    : _dest(std::move(dest)), _func(std::move(func)), _args(std::move(args)){_inst_type = 7;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
@@ -179,7 +207,7 @@ private:
 class VoidFuncCallInst : public InstBase {
 public:
     VoidFuncCallInst(FuncDefPtr func, ValPtrList args)
-    :_func(std::move(func)), _args(std::move(args)){}
+    :_func(std::move(func)), _args(std::move(args)){_inst_type = 8;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
@@ -191,7 +219,7 @@ private:
 
 class ReturnInst : public InstBase{
 public:
-    ReturnInst(ValPtr val) : _val(std::move(val)) {}
+    ReturnInst(ValPtr val) : _val(std::move(val)) {_inst_type = 9;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
@@ -202,7 +230,7 @@ private:
 class BinaryInst : public InstBase{
 public:
     BinaryInst(TokenType op, ValPtr dest, ValPtr lhs, ValPtr rhs)
-    :_op(op), _dest(std::move(dest)), _lhs(std::move(lhs)), _rhs(std::move(rhs)) {}
+    :_op(op), _dest(std::move(dest)), _lhs(std::move(lhs)), _rhs(std::move(rhs)) {_inst_type = 10;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
@@ -214,7 +242,7 @@ private:
 class UnaryInst : public InstBase{
 public:
     UnaryInst(TokenType op, ValPtr dest, ValPtr opr)
-    : _op(op), _dest(std::move(dest)), _opr(std::move(opr)) {}
+    : _op(op), _dest(std::move(dest)), _opr(std::move(opr)) {_inst_type = 11;}
     void Dump_Eeyore(std::ostream &os, const FunctionDef &func) const override;
     void Dump_Tigger(std::ostream &os, const FunctionDef &func) const override;
     void Dump_RISC_V(std::ostream &os, const FunctionDef &func) const override;
@@ -301,6 +329,7 @@ public:
     void Dump_RISC_V(std::ostream &os) const override;
     void Dump_RISC_V_Read(std::ostream &os) const override;
     void Dump_RISC_V_Write(std::ostream &os) const override;
+    const std::size_t getId() const {return _id;}
 private:
     static std::size_t _next_id;
     std::size_t _id;
