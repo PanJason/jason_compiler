@@ -507,7 +507,12 @@ func:
 
 void FunctionDef::Dump_RISC_V_GLOB(std::ostream &os, std::stringstream& global_inst) const{
     for (const auto &decl : _decl_insts) decl->Dump_RISC_V(os, *this);
-    for (const auto &inst: _insts) inst->Dump_RISC_V(global_inst, *this);
+    for (const auto &inst: _insts) {
+        auto assign_inst = std::dynamic_pointer_cast<AssignInst>(inst);
+        if((!assign_inst->val()->is_int == 1 )||( !assign_inst->val()->get_RISC_V_offset() == 0)){
+            inst->Dump_RISC_V(global_inst, *this);
+        }
+    }
 }
 void DeclareVarInst::Dump_RISC_V(std::ostream &os, const FunctionDef &func) const{
     if (func.func_name()!="00_GLOBAL"){
